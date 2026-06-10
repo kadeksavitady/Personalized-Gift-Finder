@@ -16,17 +16,16 @@ app.add_middleware(
 )
 
 CSV_PATH = 'data/katalog_dnd_buket.csv'
-FEATURES = ['kategori_bahan', 'rentang_harga', 'warna_wrapper', 'warna_isi', 'momen_acara', 'gender_penerima']
+FEATURES = ['kategori_bahan', 'rentang_harga', 'warna_wrapper', 'warna_isi', 'gender_penerima']
 
 # Pisahkan fitur nominal untuk mempermudah One-Hot Encoding nanti
-FEATURES_NOMINAL = ['kategori_bahan', 'warna_wrapper', 'warna_isi', 'momen_acara', 'gender_penerima']
+FEATURES_NOMINAL = ['kategori_bahan', 'warna_wrapper', 'warna_isi', 'gender_penerima']
 
 WEIGHTS = {
     'kategori_bahan': 1.0,
     'rentang_harga':  2.0,
     'warna_wrapper':  1.0,
     'warna_isi':      0.8,
-    'momen_acara':    1.5,
     'gender_penerima':1.5,
 }
 
@@ -43,7 +42,6 @@ class ProdukBaru(BaseModel):
     rentang_harga: str
     warna_wrapper: str
     warna_isi: str
-    momen_acara: str
     gender_penerima: str
     nama_gambar: str
 
@@ -54,7 +52,7 @@ def get_options():
     return {col: sorted(df[col].dropna().unique().tolist()) for col in FEATURES}
 
 @app.get("/recommend")
-def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", acara: str = "", gender: str = ""):
+def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", gender: str = ""):
     df = pd.read_csv(CSV_PATH)
 
     # 1. Map harga ke ordinal di katalog juga
@@ -82,11 +80,6 @@ def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", 
 
     if isi:
         col_name = f"warna_isi_{isi}"
-        if col_name in user_vector.columns:
-            user_vector[col_name] = 1
-
-    if acara:
-        col_name = f"momen_acara_{acara}"
         if col_name in user_vector.columns:
             user_vector[col_name] = 1
 
