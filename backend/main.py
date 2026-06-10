@@ -18,6 +18,15 @@ app.add_middleware(
 CSV_PATH = 'data/katalog_dnd_buket.csv'
 FEATURES = ['kategori_bahan', 'rentang_harga', 'warna_wrapper', 'warna_isi', 'momen_acara', 'gender_penerima']
 
+WEIGHTS = {
+    'kategori_bahan': 1.0,
+    'rentang_harga':  2.0,
+    'warna_wrapper':  1.0,
+    'warna_isi':      0.8,
+    'momen_acara':    1.5,
+    'gender_penerima':1.5,
+}
+
 class ProdukBaru(BaseModel):
     kategori_bahan: str
     rentang_harga: str
@@ -35,7 +44,7 @@ def get_options():
 
 @app.get("/recommend")
 def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", acara: str = "", gender: str = ""):
-    """Mengeksekusi Content-Based Filtering dengan Logika Vektor Nol (Zero-Vector)"""
+    """Mengeksekusi Content-Based Filtering dengan Logika Vektor Nol (Zero-Vector) dan Pembobotan"""
     df = pd.read_csv(CSV_PATH)
     
     # 1. Transformasi One-Hot Encoding HANYA pada data katalog
@@ -69,6 +78,14 @@ def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", 
         col_name = f"gender_penerima_{gender}"
         if col_name in user_vector.columns: user_vector[col_name] = 1
         
+    # Dilakukan setelah user_vector terisi angka 1 agar nilai 1 tersebut ikut dikalikan dengan bobot
+    for col in catalog_encoded.columns:
+        for feat, weight in WEIGHTS.items():
+            if col.startswith(feat):
+                catalog_encoded[col] *= weight
+                user_vector[col] *= weight
+                break
+        
     # 4. Hitung nilai kedekatan sudut kosinus (Cosine Similarity)
     # Jika user menekan tombol tanpa memilih kriteria apa pun (vektor isinya 0 semua)
     if user_vector.sum(axis=1).iloc[0] == 0:
@@ -83,13 +100,13 @@ def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", 
 
 @app.post("/add-product")
 def add_product(item: ProdukBaru):
-    # untuk membersihkan sesitivitas
+    # untuk membersihkan sensitivitas
     bersih_wrapper = item.warna_wrapper.strip().title()
     bersih_isi = item.warna_isi.strip().title()
     
     df = pd.read_csv(CSV_PATH)
     
-    # Masukkan data yang sudah dicuci bersih ke database
+    # Masukkan data yang sudah dibersihkan ke database
     new_data = item.dict()
     new_data['warna_wrapper'] = bersih_wrapper
     new_data['warna_isi'] = bersih_isi
