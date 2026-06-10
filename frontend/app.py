@@ -117,7 +117,7 @@ if is_owner_route:
                     payload_post = {
                         "kategori_bahan": in_bahan, "rentang_harga": in_harga,
                         "warna_wrapper": in_wrapper, "warna_isi": in_isi,
-                        "momen_acara": in_momen, "gender_penerima": in_gender,
+                        "gender_penerima": in_gender,
                         "nama_gambar": in_img_code
                     }
                     r = requests.post(f"{BACKEND_URL}/add-product", json=payload_post)
@@ -154,9 +154,6 @@ else:
                 st.markdown("<span class='field-label'>Warna Isi</span>", unsafe_allow_html=True)
                 f_isi = st.selectbox("Warna Isi", [""] + opts['warna_isi'], label_visibility="collapsed")
 
-                st.markdown("<span class='field-label'>Momen Acara</span>", unsafe_allow_html=True)
-                f_momen = st.selectbox("Momen Acara", [""] + opts['momen_acara'], label_visibility="collapsed")
-
                 st.markdown("<span class='field-label'>Untuk Siapa?</span>", unsafe_allow_html=True)
                 f_gender = st.selectbox("Untuk Siapa", [""] + opts['gender_penerima'], label_visibility="collapsed")
 
@@ -167,7 +164,7 @@ else:
             if btn_cari:
                 payload = {
                     "bahan": f_bahan, "harga": f_harga, "warna": f_wrapper,
-                    "isi": f_isi, "acara": f_momen, "gender": f_gender
+                    "isi": f_isi, "gender": f_gender
                 }
                 res = requests.get(f"{BACKEND_URL}/recommend", params=payload).json()
 
@@ -221,19 +218,17 @@ else:
                             st.markdown(score_bar(match_pct), unsafe_allow_html=True)
                             st.markdown(
                                 f"<p style='font-size:11px; color:#a16070; margin:6px 0 12px; line-height:1.6;'>"
-                                f"🎯 {item['momen_acara']}&nbsp;&nbsp;·&nbsp;&nbsp;"
                                 f"💝 {item['gender_penerima']}</p>",
                                 unsafe_allow_html=True
                             )
                             # ── Merakit Teks Otomatis untuk WhatsApp ──
                             teks_pesan = (
                                 f"Halo Admin Dnd Buket! 🌸\n\n"
-                                f"Saya menggunakan fitur Gift Finder dan ingin memesan buket ini:\n"
-                                f"- Kode: *{item['nama_gambar']}*\n"
+                                f"Saya menggunakan Gift Finder dan ingin memesan buket ini:\n"
                                 f"- Jenis: {item['kategori_bahan'].upper()}\n"
                                 f"- Warna: {item['warna_wrapper']} x {item['warna_isi']}\n"
-                                f"- Harga: Rp {item['rentang_harga']}\n\n"
-                                f"Apakah buket ini bisa dipesan/disesuaikan kembali?"
+                                f"- Budget: Rp {item['rentang_harga']}\n\n"
+                                f"Apakah ready?"
                             )
                             
                             # Mengubah teks menjadi format URL yang sah
