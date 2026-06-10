@@ -87,7 +87,8 @@ if is_owner_route:
 
     password_input = st.text_input("🔑 Password Hak Akses:", type="password", placeholder="Masukkan kata sandi internal...")
 
-    if password_input == "dndbouquett2026":
+    OWNER_PASSWORD = os.getenv("OWNER_PASSWORD", "default_fallback")
+    if password_input == OWNER_PASSWORD:
         st.success("✅ Akses diterima! Silakan perbarui katalog produk.")
 
         with st.form("form_tambah_barang", clear_on_submit=True):
