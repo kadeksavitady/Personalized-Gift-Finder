@@ -1,0 +1,33 @@
+kategori_bahan,rentang_harga,warna_wrapper,warna_isi,momen_acara,gender_penerima,nama_gambar
+artificial,50k - 70k,Putih,Pink,Kasual/Bebas,Perempuan,artificial_01
+artificial,50k - 70k,Hitam,Putih,Wisuda/Sempro/Sidang,Laki-laki,artificial_02
+artificial,35k - 45k,Biru,Mix,Wisuda/Sempro/Sidang,Laki-laki,artificial_03
+artificial,80k - 100k,Biru,Mix,Wisuda/Sempro/Sidang,Laki-laki,artificial_04
+artificial,80k - 100k,Pink,Mix,Wisuda/Sempro/Sidang,Perempuan,artificial_05
+artificial,80k - 100k,Hitam,Merah,Wisuda/Sempro/Sidang,Netral,artificial_06
+artificial,50k - 70k,Biru,Biru,Wisuda/Sempro/Sidang,Netral,artificial_07
+artificial,50k - 70k,Lilac,Ungu,Wisuda/Sempro/Sidang,Perempuan,artificial_08
+artificial,80k - 100k,Hitam,Mix,Wisuda/Sempro/Sidang,Laki-laki,artificial_09
+artificial,50k - 70k,Pink,Pink,Wisuda/Sempro/Sidang,Perempuan,artificial_10
+artificial,100k - 150k,Hitam,Kuning,Wisuda/Sempro/Sidang,Netral,artificial_11
+pipecleaner,<30k,Lilac,Ungu,Kasual/Bebas,Perempuan,pipecleaner_01
+pipecleaner,50k - 70k,Putih,Biru,Wisuda/Sempro/Sidang,Netral,pipecleaner_02
+pipecleaner,50k - 70k,Earth Tone,Kuning,Kasual/Bebas,Netral,pipecleaner_03
+pipecleaner,35k - 45k,Earth Tone,Kuning,Kasual/Bebas,Netral,pipecleaner_04
+pipecleaner,80k - 100k,Putih,Pink,Wisuda/Sempro/Sidang,Perempuan,pipecleaner_05
+pipecleaner,<30k,Transparan,Pink,Kasual/Bebas,Perempuan,pipecleaner_06
+pipecleaner,<30k,Transparan,Ungu,Kasual/Bebas,Perempuan,pipecleaner_07
+pipecleaner,50k - 70k,Putih,Pink,Wisuda/Sempro/Sidang,Perempuan,pipecleaner_08
+pipecleaner,80k - 100k,Putih,Merah,Wisuda/Sempro/Sidang,Perempuan,pipecleaner_09
+pipecleaner,80k - 100k,Putih,Merah,Wisuda/Sempro/Sidang,Netral,pipecleaner_10
+snack,35k - 45k,Biru,Biru,Wisuda/Sempro/Sidang,Netral,snack_01
+snack,80k - 100k,Hitam,Kuning,Wisuda/Sempro/Sidang,Laki-laki,snack_02
+snack,50k - 70k,Putih,Biru,Wisuda/Sempro/Sidang,Netral,snack_03
+snack,50k - 70k,Pink,Biru,Wisuda/Sempro/Sidang,Perempuan,snack_04
+snack,80k - 100k,Hitam,Merah,Wisuda/Sempro/Sidang,Laki-laki,snack_05
+snack,80k - 100k,Pink,Pink,Wisuda/Sempro/Sidang,Perempuan,snack_06
+snack,80k - 100k,Earth Tone,Coklat,Wisuda/Sempro/Sidang,Netral,snack_07
+snack,50k - 70k,Lilac,Ungu,Wisuda/Sempro/Sidang,Perempuan,snack_08
+snack,80k - 100k,Putih,Biru,Wisuda/Sempro/Sidang,Netral,snack_09
+snack,80k - 100k,Pink,Pink,Wisuda/Sempro/Sidang,Perempuan,snack_10
+pipecleaner,80k - 100k,Pink,Pink,Wisuda/Sempro/Sidang,Perempuan,pipecleaner_11
