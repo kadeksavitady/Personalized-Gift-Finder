@@ -55,58 +55,63 @@ def get_options():
 
 @app.get("/recommend")
 def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", acara: str = "", gender: str = ""):
-    """Mengeksekusi Content-Based Filtering dengan Logika Vektor Nol (Zero-Vector) dan Pembobotan"""
     df = pd.read_csv(CSV_PATH)
-    
-    # 1. Transformasi One-Hot Encoding HANYA pada data katalog
-    catalog_encoded = pd.get_dummies(df[FEATURES])
-    
-    # 2. Siapkan vektor user berukuran sama persis dengan katalog, isi dengan angka 0
-    user_vector = pd.DataFrame(0, index=[0], columns=catalog_encoded.columns)
-    
-    # 3. Nyalakan saklar (ubah jadi 1) HANYA untuk kriteria yang dipilih oleh user
+
+    # 1. Map harga ke ordinal di katalog juga
+    df['rentang_harga_num'] = df['rentang_harga'].map(HARGA_ORDINAL).fillna(0) / 5.0
+
+    # 2. One-Hot hanya untuk fitur nominal (TANPA rentang_harga)
+    catalog_encoded = pd.get_dummies(df[FEATURES_NOMINAL])
+    catalog_encoded['rentang_harga_num'] = df['rentang_harga_num'].values
+
+    # 3. Buat user_vector dengan kolom yang sama
+    user_vector = pd.DataFrame(0.0, index=[0], columns=catalog_encoded.columns)
+
     if bahan:
         col_name = f"kategori_bahan_{bahan}"
-        if col_name in user_vector.columns: user_vector[col_name] = 1
-        
-    if harga:
-        if harga in HARGA_ORDINAL:
-            user_vector['rentang_harga_num'] = HARGA_ORDINAL[harga] / 5.0
-        
+        if col_name in user_vector.columns:
+            user_vector[col_name] = 1
+
+    if harga and harga in HARGA_ORDINAL:
+        user_vector['rentang_harga_num'] = HARGA_ORDINAL[harga] / 5.0
+
     if warna:
         col_name = f"warna_wrapper_{warna}"
-        if col_name in user_vector.columns: user_vector[col_name] = 1
-        
+        if col_name in user_vector.columns:
+            user_vector[col_name] = 1
+
     if isi:
         col_name = f"warna_isi_{isi}"
-        if col_name in user_vector.columns: user_vector[col_name] = 1
-        
+        if col_name in user_vector.columns:
+            user_vector[col_name] = 1
+
     if acara:
         col_name = f"momen_acara_{acara}"
-        if col_name in user_vector.columns: user_vector[col_name] = 1
-        
+        if col_name in user_vector.columns:
+            user_vector[col_name] = 1
+
     if gender:
         col_name = f"gender_penerima_{gender}"
-        if col_name in user_vector.columns: user_vector[col_name] = 1
-        
-    # Dilakukan setelah user_vector terisi angka 1 agar nilai 1 tersebut ikut dikalikan dengan bobot
+        if col_name in user_vector.columns:
+            user_vector[col_name] = 1
+
+    # 4. Terapkan bobot
     for col in catalog_encoded.columns:
         for feat, weight in WEIGHTS.items():
             if col.startswith(feat):
                 catalog_encoded[col] *= weight
                 user_vector[col] *= weight
                 break
-        
-    # 4. Hitung nilai kedekatan sudut kosinus (Cosine Similarity)
-    # Jika user menekan tombol tanpa memilih kriteria apa pun (vektor isinya 0 semua)
+
+    # 5. Hitung cosine similarity
     if user_vector.sum(axis=1).iloc[0] == 0:
         df['similarity_score'] = 0.0
-        top_results = df.head(3) # Tampilkan 3 data teratas secara default
+        top_results = df.head(3)
     else:
         scores = cosine_similarity(user_vector, catalog_encoded)[0]
         df['similarity_score'] = scores
         top_results = df.sort_values(by='similarity_score', ascending=False).head(3)
-    
+
     return {"status": "success", "data": top_results.to_dict(orient='records')}
 
 @app.post("/add-product")
