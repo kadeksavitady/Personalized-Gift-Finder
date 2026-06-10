@@ -85,11 +85,11 @@ if is_owner_route:
     st.markdown("<div class='subtitle-brand'>Sistem Manajemen Konten — DnD Bouquett Internal</div>", unsafe_allow_html=True)
     st.write("---")
 
-    password_input = st.text_input("🔑 Password Hak Akses:", type="password", placeholder="Masukkan kata sandi internal...")
+    password_input = st.text_input("Password Hak Akses:", type="password", placeholder="Masukkan kata sandi internal...")
 
     OWNER_PASSWORD = os.getenv("OWNER_PASSWORD", "default_fallback")
     if password_input == OWNER_PASSWORD:
-        st.success("✅ Akses diterima! Silakan perbarui katalog produk.")
+        st.success("Akses diterima! Silakan perbarui katalog produk.")
 
         with st.form("form_tambah_barang", clear_on_submit=True):
             st.markdown("<div class='admin-label'>Data Produk Baru</div>", unsafe_allow_html=True)
@@ -106,7 +106,7 @@ if is_owner_route:
                 in_file     = st.file_uploader("Upload Foto (.jpg)", type=["jpg", "jpeg"])
 
             st.markdown("<div class='secondary-btn-container'>", unsafe_allow_html=True)
-            btn_submit = st.form_submit_button("💾 Daftarkan & Upload Produk")
+            btn_submit = st.form_submit_button("Daftarkan & Upload Produk")
             st.markdown("</div>", unsafe_allow_html=True)
 
             if btn_submit:
@@ -122,12 +122,12 @@ if is_owner_route:
                     }
                     r = requests.post(f"{BACKEND_URL}/add-product", json=payload_post)
                     if r.status_code == 200:
-                        st.success(f"🎉 Berhasil! Buket '{in_img_code}' tersimpan ke database.")
+                        st.success(f"Berhasil! Buket '{in_img_code}' tersimpan ke database.")
                         st.balloons()
                 else:
-                    st.error("⚠️ Lengkapi semua field teks dan upload foto produk!")
+                    st.error("Lengkapi semua field teks dan upload foto produk!")
     elif password_input:
-        st.error("❌ Kata sandi salah. Akses ditolak.")
+        st.error("Kata sandi salah. Akses ditolak.")
 
 else:
     st.markdown("<div class='title-brand'>🌸 DnD <span>Bouquett</span></div>", unsafe_allow_html=True)
@@ -158,7 +158,7 @@ else:
                 f_gender = st.selectbox("Untuk Siapa", [""] + opts['gender_penerima'], label_visibility="collapsed")
 
                 st.write("")
-                btn_cari = st.button("✨ Temukan Buket Impian", use_container_width=True)
+                btn_cari = st.button("Temukan Buket Impian!", use_container_width=True)
 
         with col_content:
             if btn_cari:
