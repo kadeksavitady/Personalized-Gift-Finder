@@ -18,6 +18,9 @@ app.add_middleware(
 CSV_PATH = 'data/katalog_dnd_buket.csv'
 FEATURES = ['kategori_bahan', 'rentang_harga', 'warna_wrapper', 'warna_isi', 'momen_acara', 'gender_penerima']
 
+# Pisahkan fitur nominal untuk mempermudah One-Hot Encoding nanti
+FEATURES_NOMINAL = ['kategori_bahan', 'warna_wrapper', 'warna_isi', 'momen_acara', 'gender_penerima']
+
 WEIGHTS = {
     'kategori_bahan': 1.0,
     'rentang_harga':  2.0,
@@ -25,6 +28,14 @@ WEIGHTS = {
     'warna_isi':      0.8,
     'momen_acara':    1.5,
     'gender_penerima':1.5,
+}
+
+HARGA_ORDINAL = {
+    '<30k': 1, 
+    '35k - 45k': 2, 
+    '50k - 70k': 3,
+    '80k - 100k': 4, 
+    '100k - 150k': 5
 }
 
 class ProdukBaru(BaseModel):
@@ -59,8 +70,8 @@ def recommend(bahan: str = "", harga: str = "", warna: str = "", isi: str = "", 
         if col_name in user_vector.columns: user_vector[col_name] = 1
         
     if harga:
-        col_name = f"rentang_harga_{harga}"
-        if col_name in user_vector.columns: user_vector[col_name] = 1
+        if harga in HARGA_ORDINAL:
+            user_vector['rentang_harga_num'] = HARGA_ORDINAL[harga] / 5.0
         
     if warna:
         col_name = f"warna_wrapper_{warna}"
