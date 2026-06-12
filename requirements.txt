@@ -1,3 +1,7 @@
+fastapi
+uvicorn[standard]
+streamlit
 pandas
 scikit-learn
-gradio
+requests
+python-dotenv
