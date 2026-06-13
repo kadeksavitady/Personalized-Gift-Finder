@@ -9,8 +9,8 @@
 Aplikasi web interaktif yang membantu pelanggan menemukan buket handmade yang paling sesuai dengan preferensi mereka (bahan, harga, warna, momen, gender penerima) menggunakan algoritma **Cosine Similarity** dengan pembobotan fitur.
 
 Arsitektur menggunakan pendekatan **Decoupled/Microservices**:
-- 🔧 **Backend Engine** — FastAPI (port 8000)
-- 🎨 **Frontend UI** — Streamlit (port 8501)
+- **Backend Engine** - FastAPI (port 8000)
+- **Frontend UI** - Streamlit (port 8501)
 
 ---
 
@@ -122,10 +122,10 @@ User Input (Dropdown)
 | `gender_penerima` | Kategorikal | 1.5 |
 
 ### Keunggulan Implementasi
-- **Zero-Vector Handling** — jika tidak ada kriteria dipilih, tampil 3 produk teratas (tidak pernah kosong)
-- **Soft-Matching** — produk terdekat tetap ditampilkan meski tidak ada yang 100% cocok
-- **Dynamic Retraining** — menambah produk baru langsung memperbarui matriks tanpa restart server
-- **Multi-value Momen** — satu produk dapat cocok untuk beberapa momen sekaligus
+- **Zero-Vector Handling**: jika tidak ada kriteria dipilih, tampil 3 produk teratas (tidak pernah kosong)
+- **Soft-Matching**: produk terdekat tetap ditampilkan meski tidak ada yang 100% cocok
+- **Dynamic Retraining**: menambah produk baru langsung memperbarui matriks tanpa restart server
+- **Multi-value Momen**: satu produk dapat cocok untuk beberapa momen sekaligus
 
 ---
 
@@ -144,37 +144,10 @@ Fitur yang tersedia:
 
 ---
 
-## Dependensi Utama
-
-```
-fastapi
-uvicorn
-streamlit
-pandas
-scikit-learn
-python-dotenv
-requests
-```
-
-Lihat `requirements.txt` untuk versi lengkap.
-
----
-
 ## Dataset
 
 - **Sumber:** Data primer internal UMKM Dnd Buket @dndbouquett + data sintetis representatif
 - **Jumlah awal:** 31 produk (artificial flower, pipecleaner, snack bouquet)
 - **Sifat:** Dinamis — dapat diperluas melalui Owner Dashboard tanpa mengubah kode
-
----
-
-## Informasi Pengembang
-
-| | |
-|--|--|
-| **Nama** | Kadek Savita Dyutianaya |
-| **NRP** | 3324600033 |
-| **Mata Kuliah** | Sistem Rekomendasi |
-| **Tahun Akademik** | 2025/2026 Semester Genap |
 
 ---
