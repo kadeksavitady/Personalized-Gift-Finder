@@ -239,14 +239,14 @@ else:
                                     unsafe_allow_html=True
                                 )
                         
-                            # Tampilkan gambar langsung dari URL Cloudinary
-                            url_foto = item['nama_gambar']
+                            # # Tampilkan gambar langsung dari URL Cloudinary
+                            # url_foto = item['nama_gambar']
                             
-                            if url_foto.startswith("http"):
-                                st.image(url_foto, use_container_width=True)
-                            else:
-                                # Jika ada data lama yang belum pakai URL
-                                st.info("Tidak ada foto")   
+                            # if url_foto.startswith("http"):
+                            #     st.image(url_foto, use_container_width=True)
+                            # else:
+                            #     # Jika ada data lama yang belum pakai URL
+                            #     st.info("Tidak ada foto")   
                             
                             st.markdown(
                                 f"<p style='font-family:Playfair Display,serif; font-size:15px; "
