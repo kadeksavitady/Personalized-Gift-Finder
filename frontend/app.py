@@ -1,11 +1,10 @@
 import streamlit as st
-import requests
 import os
 from utils.ui_helpers import score_bar, badge_kategori, badge_rank
 import urllib.parse
+import pipeline
 
 st.set_page_config(page_title="DnD Bouquett – Gift Finder", page_icon="🌸", layout="wide")
-BACKEND_URL = "http://127.0.0.1:8000"
 
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -92,7 +91,7 @@ if is_owner_route:
             
             # Ambil opsi warna dari backend
             try:
-                opts = requests.get(f"{BACKEND_URL}/options").json()
+                opts = pipeline.get_options()
                 opsi_wrapper = opts.get('warna_wrapper', [])
                 opsi_isi = opts.get('warna_isi', [])
             except:
@@ -135,32 +134,33 @@ if is_owner_route:
 
             if btn_submit:
                 errors = []
-                if not in_img_code:
-                    errors.append("Nama file foto belum diisi.")
                 if not in_file:
                     errors.append("Foto produk belum diupload.")
-                if in_wrapper == "—":
-                    errors.append("Warna wrapper tidak tersedia — pastikan backend berjalan.")
-                if in_isi == "—":
-                    errors.append("Warna isi tidak tersedia — pastikan backend berjalan.")
+                if in_wrapper == "—" or in_isi == "—":
+                    errors.append("Opsi warna tidak tersedia — pastikan database berjalan.")
 
                 if errors:
                     for e in errors:
                         st.error(e)
                 else:
-                    os.makedirs("img", exist_ok=True)
-                    with open(f"img/{in_img_code}.jpg", "wb") as f:
-                        f.write(in_file.getbuffer())
-                    payload_post = {
-                        "kategori_bahan": in_bahan, "rentang_harga": in_harga,
-                        "warna_wrapper": in_wrapper, "warna_isi": in_isi,
-                        "gender_penerima": in_gender,
-                        "nama_gambar": in_img_code
-                    }
-                    r = requests.post(f"{BACKEND_URL}/add-product", json=payload_post)
-                    if r.status_code == 200:
-                        st.success(f"Berhasil! Buket '{in_img_code}' tersimpan ke database.")
+                    # Ambil wujud asli file gambar yang diupload
+                    file_bytes = in_file.getvalue()
+                    
+                    # Lempar datanya langsung ke pipeline (tanpa payload_post)
+                    result = pipeline.add_product(
+                        kategori_bahan=in_bahan, 
+                        rentang_harga=in_harga, 
+                        warna_wrapper=in_wrapper, 
+                        warna_isi=in_isi, 
+                        gender_penerima=in_gender, 
+                        file_gambar=file_bytes
+                    )
+                    
+                    if result["status"] == "success":
+                        st.success(result["message"])
                         st.balloons()
+                    else:
+                        st.error(result["message"])
             else:
                     st.error("Lengkapi semua field teks dan upload foto produk!")
     elif password_input:
@@ -172,7 +172,7 @@ else:
     st.write("---")
 
     try:
-        opts = requests.get(f"{BACKEND_URL}/options").json()
+        opts = pipeline.get_options()
         col_sidebar, col_content = st.columns([1, 2.8], gap="large")
 
         with col_sidebar:
@@ -203,7 +203,7 @@ else:
                     "bahan": f_bahan, "harga": f_harga, "warna": f_wrapper,
                     "isi": f_isi, "gender": f_gender
                 }
-                res = requests.get(f"{BACKEND_URL}/recommend", params=payload).json()
+                res = pipeline.recommend(bahan=f_bahan, harga=f_harga, warna=f_wrapper, isi=f_isi, gender=f_gender)
 
                 st.markdown(
                     "<p style='font-family:Playfair Display,serif; font-size:22px; "
@@ -226,21 +226,39 @@ else:
 
                     with cols_card[i]:
                         with st.container(border=True):
-                            st.markdown(
-                                f"{badge_rank(rank)}&nbsp;{badge_kat_html}",
-                                unsafe_allow_html=True
-                            )
-                            img_path = f"img/{item['nama_gambar']}.jpg"
-                            if os.path.exists(img_path):
-                                st.image(img_path, use_container_width=True)
+                            # Mengambil nama atau URL dari database
+                            data_foto = item['nama_gambar']
+                            
+                            # LOGIKA HYBRID:
+                            # 1. Jika data baru (berupa link Cloudinary)
+                            if str(data_foto).startswith("http"):
+                                st.image(data_foto, use_container_width=True)
+                                
+                            # 2. Jika data lama (berupa nama file lokal)
                             else:
-                                bg = {"artificial": "#fef3f7", "snack": "#eaf3de"}.get(bahan, "#e1f5ee")
-                                st.markdown(
-                                    f"<div style='height:100px; background:{bg}; border-radius:12px; "
-                                    f"display:flex; align-items:center; justify-content:center; "
-                                    f"font-size:30px; margin:8px 0;'>🌸</div>",
-                                    unsafe_allow_html=True
-                                )
+                                img_path = f"img/{data_foto}.jpg"
+                                # Cek apakah file lokalnya ada di laptop/server
+                                if os.path.exists(img_path):
+                                    st.image(img_path, use_container_width=True)
+                                # 3. Jika benar-benar tidak ada gambar (Failsafe)
+                                else:
+                                    bg = {"artificial": "#fef3f7", "snack": "#eaf3de"}.get(bahan, "#e1f5ee")
+                                    st.markdown(
+                                        f"<div style='height:100px; background:{bg}; border-radius:12px; "
+                                        f"display:flex; align-items:center; justify-content:center; "
+                                        f"font-size:30px; margin:8px 0;'>🌸</div>",
+                                        unsafe_allow_html=True
+                                    )
+                            
+                            # Tampilkan gambar langsung dari URL Cloudinary
+                            url_foto = item['nama_gambar']
+                            
+                            if url_foto.startswith("http"):
+                                st.image(url_foto, use_container_width=True)
+                            else:
+                                # Jika ada data lama yang belum pakai URL
+                                st.info("Tidak ada foto")   
+                            
                             st.markdown(
                                 f"<p style='font-family:Playfair Display,serif; font-size:15px; "
                                 f"font-weight:600; color:#2d1a24; margin:8px 0 2px; line-height:1.3;'>"
@@ -287,4 +305,4 @@ else:
                 )
 
     except Exception as e:
-        st.error("❌ Gagal terhubung ke Backend. Jalankan dulu: `uvicorn main:app --reload`")
+        st.error(f"❌ Terjadi kesalahan sistem atau gagal terhubung ke Database Neon: {e}")
