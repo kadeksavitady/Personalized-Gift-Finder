@@ -1,7 +1,6 @@
-fastapi
-uvicorn[standard]
 streamlit
 pandas
 scikit-learn
-requests
-python-dotenv
+SQLAlchemy
+psycopg2-binary
+cloudinary
