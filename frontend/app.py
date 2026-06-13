@@ -34,31 +34,31 @@ html, body, [class*="css"], .stApp {
 hr { border: none !important; border-top: 1px solid #f5ccd8 !important; margin: 18px 0 !important; }
 .sidebar-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; color: #be185d; margin-bottom: 16px; }
 .field-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: #a16070; margin-bottom: 4px; display: block; }
+
 .stSelectbox > div > div { background: #fdf6f9 !important; border: 1px solid #f5ccd8 !important; border-radius: 10px !important; color: #2d1a24 !important; font-size: 13px !important; }
 .stSelectbox > div > div:focus-within { border-color: #be185d !important; box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.1) !important; }
 .stSelectbox svg { fill: #d4799a !important; }
 .stTextInput > div > div > input { background: #fdf6f9 !important; border: 1px solid #f5ccd8 !important; border-radius: 10px !important; color: #2d1a24 !important; font-size: 13px !important; }
 .stTextInput > div > div > input:focus { border-color: #be185d !important; box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.1) !important; }
 .stTextInput > div > div > input::placeholder { color: #c9a0ac !important; }
-[data-testid="stFileUploader"] { background: #fdf6f9 !important; border: 1px dashed #f5ccd8 !important; border-radius: 10px !important; padding: 10px !important; }
-.stButton > button {
-    background: #be185d !important;
-    color: #ffffff !important;
-    border: none !important;
-    border-radius: 10px !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.02em !important;
-    padding: 11px 18px !important;
-    width: 100% !important;
-    box-shadow: 0 4px 14px rgba(190, 24, 93, 0.18) !important;
-    transition: all 0.2s ease !important;
-}
+[data-testid="stCaptionContainer"] p { color: #a16070 !important; font-size: 11px !important; }
+[data-testid="stFileUploader"] section { background: #fdf6f9 !important; border: 1px dashed #f5ccd8 !important; border-radius: 10px !important; }
+[data-testid="stFileUploader"] section button { background: rgba(161, 96, 112, 0.08) !important; color: #a16070 !important; border: 1px solid #f5ccd8 !important; box-shadow: none !important; width: auto !important; border-radius: 8px !important; transition: all 0.2s ease !important; }
+[data-testid="stFileUploader"] section button:hover { background: rgba(161, 96, 112, 0.15) !important; color: #be185d !important; transform: none !important; box-shadow: none !important; }
+[data-testid="stFileUploader"] section button:focus, [data-testid="stFileUploader"] section button:active { background: rgba(161, 96, 112, 0.08) !important; color: #a16070 !important; box-shadow: none !important; transform: none !important; }
+.stButton > button { background: #be185d !important; color: #ffffff !important; border: none !important; border-radius: 10px !important; font-family: 'DM Sans', sans-serif !important; font-size: 13px !important; font-weight: 500 !important; letter-spacing: 0.02em !important; padding: 11px 18px !important; width: 100% !important; box-shadow: 0 4px 14px rgba(190, 24, 93, 0.18) !important; transition: all 0.2s ease !important; }
 .stButton > button:hover { background: #9d174d !important; transform: translateY(-1px) !important; box-shadow: 0 6px 18px rgba(190, 24, 93, 0.25) !important; }
 .stButton > button:active { transform: translateY(0px) !important; }
+[data-testid="stFormSubmitButton"] > button { background: #be185d !important; color: #ffffff !important; border: none !important; border-radius: 10px !important; font-size: 13px !important; font-weight: 500 !important; padding: 11px 18px !important; width: 100% !important; box-shadow: 0 4px 14px rgba(190, 24, 93, 0.18) !important; transition: all 0.2s ease !important; }
+[data-testid="stFormSubmitButton"] > button:hover { background: #9d174d !important; transform: translateY(-1px) !important; box-shadow: 0 6px 18px rgba(190, 24, 93, 0.25) !important; }
+.secondary-btn-container .stButton > button { background: #ffffff !important; color: #be185d !important; border: 1px solid #f5ccd8 !important; box-shadow: none !important; }
+.secondary-btn-container .stButton > button:hover { background: #fef3f7 !important; box-shadow: none !important; transform: none !important; }
+.stAlert { background: #fef3f7 !important; border: 1px solid #f9a8d4 !important; border-radius: 14px !important; color: #9d174d !important; }
+[data-testid="stAlert"] p, [data-testid="stAlert"] span { color: #9d174d !important; }
+[data-testid="stAlert"] svg { fill: #be185d !important; }
 [data-testid="stVerticalBlockBorderDriven"] { background: #ffffff !important; border: 1px solid #f0e8ed !important; border-radius: 18px !important; padding: 18px !important; transition: all 0.25s ease !important; }
 [data-testid="stVerticalBlockBorderDriven"]:hover { border-color: #f9a8d4 !important; box-shadow: 0 8px 24px rgba(190, 24, 93, 0.08) !important; transform: translateY(-2px) !important; }
+[data-testid="stImage"] img { border-radius: 12px !important; object-fit: cover !important; }
 .badge-kategori { display: inline-block; background: #fef3f7; color: #9d174d; padding: 2px 9px; border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; border: 1px solid #f9a8d4; }
 .badge-kategori-green { display: inline-block; background: #eaf3de; color: #27500a; padding: 2px 9px; border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; border: 1px solid #c0dd97; }
 .badge-kategori-teal { display: inline-block; background: #e1f5ee; color: #085041; padding: 2px 9px; border-radius: 20px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; border: 1px solid #9fe1cb; }
@@ -69,10 +69,6 @@ hr { border: none !important; border-top: 1px solid #f5ccd8 !important; margin: 
 .score-bar-fill { height: 4px; background: #f9a8d4; border-radius: 4px; }
 .score-text { font-size: 11px; color: #a16070; margin-top: 4px; }
 .product-price { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: #be185d; margin-top: 4px; }
-.stAlert { background: #fef3f7 !important; border: 1px solid #f9a8d4 !important; border-radius: 14px !important; color: #9d174d !important; }
-[data-testid="stImage"] img { border-radius: 12px !important; object-fit: cover !important; }
-.secondary-btn-container .stButton > button { background: #ffffff !important; color: #be185d !important; border: 1px solid #f5ccd8 !important; box-shadow: none !important; }
-.secondary-btn-container .stButton > button:hover { background: #fef3f7 !important; box-shadow: none !important; transform: none !important; }
 .admin-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: #a16070; border-left: 3px solid #be185d; padding-left: 8px; margin-bottom: 16px; border-radius: 0; }
 </style>
 """, unsafe_allow_html=True)
@@ -93,24 +89,65 @@ if is_owner_route:
 
         with st.form("form_tambah_barang", clear_on_submit=True):
             st.markdown("<div class='admin-label'>Data Produk Baru</div>", unsafe_allow_html=True)
+            
+            # Ambil opsi warna dari backend
+            try:
+                opts = requests.get(f"{BACKEND_URL}/options").json()
+                opsi_wrapper = opts.get('warna_wrapper', [])
+                opsi_isi = opts.get('warna_isi', [])
+            except:
+                opsi_wrapper = []
+                opsi_isi = []
+
             c1, c2 = st.columns(2)
             with c1:
-                in_bahan    = st.selectbox("Kategori Bahan",    ["artificial", "pipecleaner", "snack"])
-                in_harga    = st.selectbox("Rentang Harga",     ["<30k", "35k - 45k", "50k - 70k", "80k - 100k", "100k - 150k"])
-                in_wrapper  = st.text_input("Warna Wrapper",    placeholder="Contoh: Lilac, Putih, Hitam")
-                in_isi      = st.text_input("Warna Isi",        placeholder="Contoh: Pink, Mix, Coklat")
-            with c2:
-                in_momen    = st.selectbox("Relevansi Momen",   ["Wisuda/Sempro/Sidang", "Kasual/Bebas"])
-                in_gender   = st.selectbox("Gender Penerima",   ["Perempuan", "Laki-laki", "Netral"])
-                in_img_code = st.text_input("Nama File Foto",   placeholder="Contoh: artificial_11")
-                in_file     = st.file_uploader("Upload Foto (.jpg)", type=["jpg", "jpeg"])
+                st.markdown("<span class='field-label'>Kategori Bahan</span>", unsafe_allow_html=True)
+                st.caption("Pilih jenis bahan utama buket.")
+                in_bahan = st.selectbox("Kategori Bahan", ["artificial", "pipecleaner", "snack"], label_visibility="collapsed")
 
-            st.markdown("<div class='secondary-btn-container'>", unsafe_allow_html=True)
+                st.markdown("<span class='field-label'>Rentang Harga</span>", unsafe_allow_html=True)
+                st.caption("Pilih rentang harga jual buket ini.")
+                in_harga = st.selectbox("Rentang Harga", ["<30k", "35k - 45k", "50k - 70k", "80k - 100k", "100k - 150k"], label_visibility="collapsed")
+
+                st.markdown("<span class='field-label'>Warna Wrapper</span>", unsafe_allow_html=True)
+                st.caption("Warna kertas/plastik pembungkus luar buket.")
+                in_wrapper = st.selectbox("Warna Wrapper", opsi_wrapper if opsi_wrapper else ["—"], label_visibility="collapsed")
+
+                st.markdown("<span class='field-label'>Warna Isi</span>", unsafe_allow_html=True)
+                st.caption("Warna dominan bunga atau isi buket.")
+                in_isi = st.selectbox("Warna Isi", opsi_isi if opsi_isi else ["—"], label_visibility="collapsed")
+
+            with c2:
+                st.markdown("<span class='field-label'>Gender Penerima</span>", unsafe_allow_html=True)
+                st.caption("Target gender yang cocok untuk buket ini.")
+                in_gender = st.selectbox("Gender Penerima", ["Perempuan", "Laki-laki", "Netral"], label_visibility="collapsed")
+
+                st.markdown("<span class='field-label'>Nama File Foto</span>", unsafe_allow_html=True)
+                st.caption("Nama unik untuk file foto, tanpa ekstensi .jpg.")
+                in_img_code = st.text_input("Nama File Foto", placeholder="Contoh: artificial_11", label_visibility="collapsed")
+
+                st.markdown("<span class='field-label'>Upload Foto Produk</span>", unsafe_allow_html=True)
+                st.caption("Upload foto buket dalam format .jpg.")
+                in_file = st.file_uploader("Upload Foto (.jpg)", type=["jpg", "jpeg"], label_visibility="collapsed")
+
+            st.write("")
             btn_submit = st.form_submit_button("Daftarkan & Upload Produk")
-            st.markdown("</div>", unsafe_allow_html=True)
 
             if btn_submit:
-                if in_wrapper and in_isi and in_img_code and in_file:
+                errors = []
+                if not in_img_code:
+                    errors.append("Nama file foto belum diisi.")
+                if not in_file:
+                    errors.append("Foto produk belum diupload.")
+                if in_wrapper == "—":
+                    errors.append("Warna wrapper tidak tersedia — pastikan backend berjalan.")
+                if in_isi == "—":
+                    errors.append("Warna isi tidak tersedia — pastikan backend berjalan.")
+
+                if errors:
+                    for e in errors:
+                        st.error(e)
+                else:
                     os.makedirs("img", exist_ok=True)
                     with open(f"img/{in_img_code}.jpg", "wb") as f:
                         f.write(in_file.getbuffer())
@@ -124,7 +161,7 @@ if is_owner_route:
                     if r.status_code == 200:
                         st.success(f"Berhasil! Buket '{in_img_code}' tersimpan ke database.")
                         st.balloons()
-                else:
+            else:
                     st.error("Lengkapi semua field teks dan upload foto produk!")
     elif password_input:
         st.error("Kata sandi salah. Akses ditolak.")
@@ -221,7 +258,6 @@ else:
                                 f"💝 {item['gender_penerima']}</p>",
                                 unsafe_allow_html=True
                             )
-                            # ── Merakit Teks Otomatis untuk WhatsApp ──
                             teks_pesan = (
                                 f"Halo Admin Dnd Buket! 🌸\n\n"
                                 f"Saya menggunakan Gift Finder dan ingin memesan buket ini:\n"
@@ -230,15 +266,9 @@ else:
                                 f"- Budget: Rp {item['rentang_harga']}\n\n"
                                 f"Apakah ready?"
                             )
-                            
-                            # Mengubah teks menjadi format URL yang sah
                             pesan_encoded = urllib.parse.quote(teks_pesan)
-                            
-                            # GANTI NOMOR DI BAWAH dengan nomor WA Admin Dnd Buket (gunakan format 628...)
-                            nomor_wa = "6281244170440" 
+                            nomor_wa = "6281244170440"
                             link_wa = f"https://wa.me/{nomor_wa}?text={pesan_encoded}"
-
-                            # ── Menggunakan st.link_button agar membuka Tab Baru ──
                             st.link_button(
                                 "💌 Pesan via WhatsApp",
                                 url=link_wa,
