@@ -1,7 +1,7 @@
 # 🌸 DnD Bouquett — Personalized Gift Finder
 
 > Sistem Rekomendasi Berbasis **Weighted Content-Based Filtering** untuk UMKM *dnd bouquett*  
-> Mata Kuliah Sistem Rekomendasi | Semester Genap TA. 2025/2026  
+> Mata Kuliah Sistem Rekomendasi
 > **Kadek Savita Dyutianaya** — NRP 3324600033
 ---
 
