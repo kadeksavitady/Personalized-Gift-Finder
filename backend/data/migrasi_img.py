@@ -5,10 +5,10 @@ import cloudinary
 import cloudinary.uploader
 
 # 1. MASUKKAN KUNCI RAHASIAMU DI SINI (Hanya untuk keperluan script ini saja)
-NEON_DB_URL = "postgresql://neondb_owner:npg_OY62IRlahkCX@ep-floral-cherry-aikwumag-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-CLOUDINARY_CLOUD_NAME = "dfrw5ikge"
-CLOUDINARY_API_KEY = "259786845581388"
-CLOUDINARY_API_SECRET = "L1R_4Bb4ORysM0Qqh8qTRAAyPRo"
+NEON_DB_URL = ""
+CLOUDINARY_CLOUD_NAME = ""
+CLOUDINARY_API_KEY = ""
+CLOUDINARY_API_SECRET = ""
 
 # Konfigurasi Cloudinary
 cloudinary.config( 
