@@ -90,8 +90,8 @@ def add_product(kategori_bahan, rentang_harga, warna_wrapper, warna_isi, gender_
     bersih_isi = warna_isi.strip().title()
     
     try:
-        # 1. Upload file bytes langsung ke Cloudinary ke dalam folder 'dnd_bouquett'
-        upload_result = cloudinary.uploader.upload(file_gambar, folder="dnd_bouquett")
+        # 1. Upload file bytes langsung ke Cloudinary ke dalam folder 'dnd_buket'
+        upload_result = cloudinary.uploader.upload(file_gambar, folder="dnd_buket")
         
         # 2. Ambil URL publik yang dihasilkan Cloudinary
         url_gambar = upload_result['secure_url']

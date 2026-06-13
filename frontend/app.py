@@ -229,27 +229,22 @@ else:
                             # Mengambil nama atau URL dari database
                             data_foto = item['nama_gambar']
                             
-                            # LOGIKA HYBRID:
-                            # 1. Jika data baru (berupa link Cloudinary)
-                            if str(data_foto).startswith("http"):
-                                st.image(data_foto, use_container_width=True)
-                                
-                            # 2. Jika data lama (berupa nama file lokal)
-                            else:
-                                img_path = f"img/{data_foto}.jpg"
-                                # Cek apakah file lokalnya ada di laptop/server
-                                if os.path.exists(img_path):
-                                    st.image(img_path, use_container_width=True)
-                                # 3. Jika benar-benar tidak ada gambar (Failsafe)
-                                else:
-                                    bg = {"artificial": "#fef3f7", "snack": "#eaf3de"}.get(bahan, "#e1f5ee")
-                                    st.markdown(
-                                        f"<div style='height:100px; background:{bg}; border-radius:12px; "
-                                        f"display:flex; align-items:center; justify-content:center; "
-                                        f"font-size:30px; margin:8px 0;'>🌸</div>",
-                                        unsafe_allow_html=True
-                                    )
-                            
+                            # Satu-satunya logika display gambar
+                        data_foto = item.get('nama_gambar') or ""
+
+                        if str(data_foto).startswith("http"):
+                            st.image(data_foto, use_container_width=True)
+                        elif data_foto and os.path.exists(f"img/{data_foto}.jpg"):
+                            st.image(f"img/{data_foto}.jpg", use_container_width=True)
+                        else:
+                            bg = {"artificial": "#fef3f7", "snack": "#eaf3de"}.get(bahan, "#e1f5ee")
+                            st.markdown(
+                                f"<div style='height:100px; background:{bg}; border-radius:12px; "
+                                f"display:flex; align-items:center; justify-content:center; "
+                                f"font-size:30px; margin:8px 0;'>🌸</div>",
+                                unsafe_allow_html=True
+                            )
+                        
                             # Tampilkan gambar langsung dari URL Cloudinary
                             url_foto = item['nama_gambar']
                             
