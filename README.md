@@ -1,16 +1,59 @@
-# 🌸 DnD Bouquett — Personalized Gift Finder
+# 🌸 DnD Bouquet — Personalized Gift Finder
 
-> Sistem Rekomendasi Berbasis **Weighted Content-Based Filtering** untuk UMKM *dnd bouquett*  
-> Mata Kuliah Sistem Rekomendasi
+> Sistem Rekomendasi Berbasis **Weighted Content-Based Filtering** untuk UMKM *dnd bouquet*  
+> Mata Kuliah Sistem Rekomendasi  
 > **Kadek Savita Dyutianaya** — NRP 3324600033
+
 ---
 
 ## Deskripsi Proyek
-Aplikasi web interaktif yang membantu pelanggan menemukan buket handmade yang paling sesuai dengan preferensi mereka (bahan, harga, warna, momen, gender penerima) menggunakan algoritma **Cosine Similarity** dengan pembobotan fitur.
 
-Arsitektur menggunakan pendekatan **Decoupled/Microservices**:
-- **Backend Engine** - FastAPI (port 8000)
-- **Frontend UI** - Streamlit (port 8501)
+Aplikasi web interaktif untuk menemukan buket *handmade* yang paling sesuai dengan preferensi pengguna (bahan, harga, warna, gender penerima). Sistem menggunakan algoritma **Weighted Content-Based Filtering** dengan **Cosine Similarity** untuk memberikan hasil rekomendasi yang presisi.
+
+Arsitektur aplikasi menggunakan pendekatan **Cloud-Native**:
+
+| Layer | Teknologi |
+|-------|-----------|
+| Frontend | Streamlit |
+| Backend | FastAPI |
+| Database | Neon (PostgreSQL Serverless) |
+| Image Storage | Cloudinary (CDN-based) |
+
+---
+
+## Metodologi & Alur Sistem
+
+### Alur Kerja Sistem (Recommendation Engine)
+
+```mermaid
+graph TD
+    Input[Input User: Dropdown] --> Profile[Explicit User Profile Construction]
+    Profile --> Encoding[One-Hot Encoding]
+    Encoding --> Weight[Weighted Feature Matrix]
+    Weight --> Cosine[Cosine Similarity Calculation]
+    Cosine --> Ranking[Ranking Top-3 — Soft-Matching]
+    Ranking --> Output[Tampil Rekomendasi + Tombol WhatsApp]
+```
+
+### Pembobotan Fitur
+
+Sistem menghitung kecocokan produk berdasarkan prioritas berikut:
+
+| Fitur | Tipe | Bobot |
+|-------|------|-------|
+| `rentang_harga` | Ordinal | 2.0 |
+| `gender_penerima` | Kategorikal | 1.5 |
+| `kategori_bahan` | Kategorikal | 1.0 |
+| `warna_wrapper` | Kategorikal | 1.0 |
+| `warna_isi` | Kategorikal | 0.8 |
+
+### Keunggulan Implementasi
+
+- **Zero-Vector Handling** — jika tidak ada kriteria dipilih, sistem tetap menampilkan 3 produk teratas.
+- **Soft-Matching** — produk terdekat tetap direkomendasikan meski tidak ada yang 100% cocok.
+- **Dynamic Retraining** — menambah produk baru langsung memperbarui matriks tanpa restart server.
+- **Multi-value Momen** — satu produk dapat cocok untuk beberapa momen sekaligus.
+- **Decoupled Architecture** — pemisahan metadata (Neon) dan aset gambar (Cloudinary) menjamin performa tinggi.
 
 ---
 
@@ -18,19 +61,25 @@ Arsitektur menggunakan pendekatan **Decoupled/Microservices**:
 
 ```
 dnd-bouquett/
-├── main.py                    # Backend FastAPI (recommendation engine)
-├── app.py                     # Frontend Streamlit (user interface)
-├── requirements.txt           # Daftar dependensi Python
-├── .env                       # Variabel lingkungan (TIDAK di-push ke GitHub)
-├── .env.example               # Template .env untuk referensi
+├── backend/
+│   ├── data/
+│   │   └── katalog_dnd_buket.csv  # Database katalog produk (dinamis)
+│   └── main.py                    # Backend FastAPI & Recommendation Engine
+├── frontend/
+│   ├── img/                       # Foto produk (tidak di-push ke GitHub)
+│   ├── utils/                     # Helper fungsi UI (score bar, badge)
+│   ├── app.py                     # Frontend Streamlit (User Interface)
+│   ├── migrasi.py                 # Script migrasi database
+│   └── pipeline.py                # Pipeline sinkronisasi data
+├── .streamlit/
+│   └── secrets.toml               # Konfigurasi secrets Streamlit
+├── venv/                          # Virtual environment (tidak di-push ke GitHub)
+├── .env                           # Konfigurasi database & API (TIDAK di-push ke GitHub)
+├── .env.example                   # Template .env untuk referensi
 ├── .gitignore
-├── jalankan.bat               # Script otomatis untuk Windows
-├── data/
-│   └── katalog_dnd_buket.csv  # Database katalog produk (dinamis)
-├── img/
-│   └── *.jpg                  # Foto produk (tidak di-push ke GitHub)
-└── utils/
-    └── ui_helpers.py          # Helper fungsi UI (score bar, badge)
+├── jalankan.bat                   # Script otomatis untuk Windows
+├── requirements.txt               # List dependensi Python
+└── sinkronisasi_otomatis.py       # Script sinkronisasi otomatis
 ```
 
 ---
@@ -38,8 +87,10 @@ dnd-bouquett/
 ## Cara Menjalankan (Lokal)
 
 ### Prasyarat
-- Python **3.9+**
-- pip
+
+- Python **3.9+** & pip
+- Akun [Neon](https://neon.tech) (PostgreSQL Serverless)
+- Akun [Cloudinary](https://cloudinary.com) (Image Storage)
 
 ### 1. Clone Repository
 
@@ -66,11 +117,18 @@ pip install -r requirements.txt
 
 ### 4. Konfigurasi Environment
 
-Buka file `.env.example`, ubah isinya, lalu **hapus bagian `.example`** dari nama filenya sehingga menjadi `.env`.
+Salin `.env.example` menjadi `.env`, lalu isi dengan kredensial milikmu:
 
-Isi file:
+```bash
+cp .env.example .env
 ```
-OWNER_PASSWORD=isi_password_owner_disini
+
+```env
+NEON_DB_URL=your_postgresql_url
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+OWNER_PASSWORD=your_password
 ```
 
 ### 5. Jalankan Aplikasi
@@ -81,51 +139,27 @@ OWNER_PASSWORD=isi_password_owner_disini
 
 ```bash
 # Terminal 1 — Backend
-uvicorn main:app --reload
+uvicorn backend.main:app --reload
 
 # Terminal 2 — Frontend
-streamlit run app.py
+streamlit run frontend/app.py
 ```
 
-### 6. Buka di Browser
+### 6. Akses Aplikasi
 
 | Layanan | URL |
 |---------|-----|
 | Aplikasi utama (Streamlit) | http://localhost:8501 |
-| API dokumentasi (FastAPI) | http://localhost:8000/docs |
+| API Dokumentasi (FastAPI) | http://localhost:8000/docs |
 | Owner Dashboard | http://localhost:8501/?view=owner |
 
 ---
 
-## Metodologi
+## Demo Live
 
-### Alur Sistem
+Aplikasi sudah di-deploy dan dapat diakses langsung tanpa instalasi:
 
-```
-User Input (Dropdown) 
-    → Explicit User Profile Construction
-    → One-Hot Encoding (katalog + vektor user)
-    → Weighted Feature Matrix
-    → Cosine Similarity Calculation
-    → Ranking Top-3 (Soft-Matching)
-    → Tampil Rekomendasi + Tombol WhatsApp
-```
-
-### Fitur yang Digunakan
-
-| Fitur | Tipe | Bobot |
-|-------|------|-------|
-| `kategori_bahan` | Kategorikal | 1.0 |
-| `rentang_harga` | Ordinal | 2.0 |
-| `warna_wrapper` | Kategorikal | 1.0 |
-| `warna_isi` | Kategorikal | 0.8 |
-| `gender_penerima` | Kategorikal | 1.5 |
-
-### Keunggulan Implementasi
-- **Zero-Vector Handling**: jika tidak ada kriteria dipilih, tampil 3 produk teratas (tidak pernah kosong)
-- **Soft-Matching**: produk terdekat tetap ditampilkan meski tidak ada yang 100% cocok
-- **Dynamic Retraining**: menambah produk baru langsung memperbarui matriks tanpa restart server
-- **Multi-value Momen**: satu produk dapat cocok untuk beberapa momen sekaligus
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://personalized-gift-finder.streamlit.app/)
 
 ---
 
@@ -138,7 +172,7 @@ http://localhost:8501/?view=owner
 ```
 
 Fitur yang tersedia:
-- Tambah produk baru ke katalog CSV
+- Tambah produk baru ke katalog
 - Upload foto produk (.jpg)
 - Password terproteksi (dikonfigurasi via `.env`)
 
@@ -146,8 +180,11 @@ Fitur yang tersedia:
 
 ## Dataset
 
-- **Sumber:** Data primer internal UMKM Dnd Buket @dndbouquett + data sintetis representatif
+- **Sumber:** Data primer internal UMKM Dnd Bouquet (@dndbouquett) + data sintetis representatif
 - **Jumlah awal:** 31 produk (artificial flower, pipecleaner, snack bouquet)
 - **Sifat:** Dinamis — dapat diperluas melalui Owner Dashboard tanpa mengubah kode
+- **Integrasi:** Metadata disimpan di Neon, aset visual disinkronisasi otomatis via Cloudinary
 
 ---
+
+*Dikembangkan oleh **Kadek Savita Dyutianaya** | PENS*
