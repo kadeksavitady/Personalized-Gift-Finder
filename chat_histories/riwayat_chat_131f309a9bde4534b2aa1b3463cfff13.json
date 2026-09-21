@@ -1,0 +1,162 @@
+[
+  {
+    "role": "user",
+    "content": "hi"
+  },
+  {
+    "role": "assistant",
+    "content": "Halo Kak, MinDee siap membantu! Berikut adalah 3 rekomendasi bunga yang mungkin Kakak suka.\n\n- **Artificial** dengan kombinasi warna **Putih x Pink**, harga **Rp 50k - 70k**\n- **Artificial** dengan kombinasi warna **Hitam x Putih**, harga **Rp 50k - 70k**\n- **Artificial** dengan kombinasi warna **Biru x Mix**, harga **Rp 35k - 45k**\n\nKalau ada yang cocok, klik tombol **Pesan via WhatsApp** di bawah kartu produk ya, Kak 🌸",
+    "items": [
+      {
+        "kategori_bahan": "artificial",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Putih",
+        "warna_isi": "Pink",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781368142/dnd_buket/qjpsjfzsqh6rlw9uhmom.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.0
+      },
+      {
+        "kategori_bahan": "artificial",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Hitam",
+        "warna_isi": "Putih",
+        "gender_penerima": "Laki-laki",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781368183/dnd_buket/hig1fkffpn5etoeuhfwn.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.0
+      },
+      {
+        "kategori_bahan": "artificial",
+        "rentang_harga": "35k - 45k",
+        "warna_wrapper": "Biru",
+        "warna_isi": "Mix",
+        "gender_penerima": "Laki-laki",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781368214/dnd_buket/ajcrzwyjv2p4mhxbqmo8.jpg",
+        "rentang_harga_num": 0.4,
+        "similarity_score": 0.0
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "content": "suka yang putih pink sih"
+  },
+  {
+    "role": "assistant",
+    "content": "Siap Kak, MinDee sudah siapkan beberapa pilihan bunga dengan nuansa putih dan pink untuk Kakak.\n\n- **Pipecleaner** dengan kombinasi warna **Pink x Pink**, harga **Rp 35k - 45k**\n- **Pipecleaner** dengan kombinasi warna **Pink x Mix**, harga **Rp 50k - 70k**\n- **Artificial** dengan kombinasi warna **Pink x Pink**, harga **Rp 50k - 70k**\n\nKalau ada yang cocok, klik tombol **Pesan via WhatsApp** di bawah kartu produk ya, Kak 🌸",
+    "items": [
+      {
+        "kategori_bahan": "pipecleaner",
+        "rentang_harga": "35k - 45k",
+        "warna_wrapper": "Pink",
+        "warna_isi": "Pink",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/v1781390505/dnd_buket/vcnzllugemjk3msnwtzg.jpg",
+        "rentang_harga_num": 0.4,
+        "similarity_score": 0.42524325556256226
+      },
+      {
+        "kategori_bahan": "pipecleaner",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Pink",
+        "warna_isi": "Mix",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/v1781441868/dnd_buket/jpme8pn1vnzzma3mdaxs.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.3974643167585821
+      },
+      {
+        "kategori_bahan": "artificial",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Pink",
+        "warna_isi": "Pink",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781369595/dnd_buket/ermynezmtzqgswknduqc.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.3974643167585821
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "content": "aku kemarin ada pesan yang hitam , sekarang stok masih ada ga?"
+  },
+  {
+    "role": "assistant",
+    "content": "Halo Kak, MinDee akan cek ketersediaan stok bunga hitam untuk Kakak. Berikut adalah 3 rekomendasi yang mungkin Kakak cari.\n\n- **Artificial** dengan kombinasi warna **Putih x Pink**, harga **Rp 50k - 70k**\n- **Pipecleaner** dengan kombinasi warna **Putih x Pink**, harga **Rp 50k - 70k**\n- **Pipecleaner** dengan kombinasi warna **Putih x Biru**, harga **Rp 50k - 70k**\n\nKalau ada yang cocok, klik tombol **Pesan via WhatsApp** di bawah kartu produk ya, Kak 🌸",
+    "items": [
+      {
+        "kategori_bahan": "artificial",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Putih",
+        "warna_isi": "Pink",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781368142/dnd_buket/qjpsjfzsqh6rlw9uhmom.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.5090026800303129
+      },
+      {
+        "kategori_bahan": "pipecleaner",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Putih",
+        "warna_isi": "Pink",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781369950/dnd_buket/y4cec4nbtxzs4ptblv9e.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.5090026800303129
+      },
+      {
+        "kategori_bahan": "pipecleaner",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Putih",
+        "warna_isi": "Biru",
+        "gender_penerima": "Netral",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781369672/dnd_buket/sjnesgovevz4jn1koytm.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.3103674878233615
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "content": "inget ga pesanan pertamaku?"
+  },
+  {
+    "role": "assistant",
+    "content": "Halo Kak, MinDee akan bantu cek kembali riwayat pesanan pertama Kakak. Berikut adalah 3 rekomendasi yang mungkin Kakak maksud.\n\n- **Pipecleaner** dengan kombinasi warna **Pink x Pink**, harga **Rp 35k - 45k**\n- **Pipecleaner** dengan kombinasi warna **Pink x Mix**, harga **Rp 50k - 70k**\n- **Artificial** dengan kombinasi warna **Pink x Pink**, harga **Rp 50k - 70k**\n\nKalau ada yang cocok, klik tombol **Pesan via WhatsApp** di bawah kartu produk ya, Kak 🌸",
+    "items": [
+      {
+        "kategori_bahan": "pipecleaner",
+        "rentang_harga": "35k - 45k",
+        "warna_wrapper": "Pink",
+        "warna_isi": "Pink",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/v1781390505/dnd_buket/vcnzllugemjk3msnwtzg.jpg",
+        "rentang_harga_num": 0.4,
+        "similarity_score": 0.42524325556256226
+      },
+      {
+        "kategori_bahan": "pipecleaner",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Pink",
+        "warna_isi": "Mix",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/v1781441868/dnd_buket/jpme8pn1vnzzma3mdaxs.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.3974643167585821
+      },
+      {
+        "kategori_bahan": "artificial",
+        "rentang_harga": "50k - 70k",
+        "warna_wrapper": "Pink",
+        "warna_isi": "Pink",
+        "gender_penerima": "Perempuan",
+        "nama_gambar": "https://res.cloudinary.com/dfrw5ikge/image/upload/q_auto/f_auto/v1781369595/dnd_buket/ermynezmtzqgswknduqc.jpg",
+        "rentang_harga_num": 0.6,
+        "similarity_score": 0.3974643167585821
+      }
+    ]
+  }
+]

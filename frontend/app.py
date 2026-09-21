@@ -5,9 +5,18 @@ import json
 import html
 import logging
 import urllib.parse
+import uuid
 from groq import Groq
 from utils.ui_helpers import score_bar, badge_kategori, badge_rank
 import pipeline
+
+# Muat .env untuk pemakaian lokal (GROQ_API_KEY, OWNER_PASSWORD, dll).
+# Dibungkus try/except supaya deployment tanpa python-dotenv tidak error.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +67,17 @@ hr { border: none !important; border-top: 1px solid #f5ccd8 !important; margin: 
 [data-testid="stFormSubmitButton"] > button:hover { background: #9d174d !important; transform: translateY(-1px) !important; box-shadow: 0 6px 18px rgba(190, 24, 93, 0.25) !important; }
 .secondary-btn-container .stButton > button { background: #ffffff !important; color: #be185d !important; border: 1px solid #f5ccd8 !important; box-shadow: none !important; }
 .secondary-btn-container .stButton > button:hover { background: #fef3f7 !important; box-shadow: none !important; transform: none !important; }
+/* Tombol Mulai Percakapan Baru di dalam chat (gaya outline) */
+.st-key-chat_clear button {
+    background: #ffffff !important; background-color: #ffffff !important; color: #be185d !important;
+    border: 1px solid #f5ccd8 !important; border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important; font-size: 13px !important; font-weight: 500 !important;
+    padding: 11px 18px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important;
+}
+.st-key-chat_clear button:hover {
+    background: #fef3f7 !important; border-color: #f9a8d4 !important; transform: none !important; box-shadow: none !important;
+}
+.st-key-chat_clear button p { color: inherit !important; }
 .stAlert { background: #fef3f7 !important; border: 1px solid #f9a8d4 !important; border-radius: 14px !important; color: #9d174d !important; }
 [data-testid="stAlert"] p, [data-testid="stAlert"] span { color: #9d174d !important; }
 [data-testid="stAlert"] svg { fill: #be185d !important; }
@@ -137,6 +157,12 @@ hr { border: none !important; border-top: 1px solid #f5ccd8 !important; margin: 
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
 _groq_client = None
 
+# Memori percakapan (otomatis, tanpa aksi apa pun dari pelanggan)
+MAX_HISTORY_MESSAGES = 20      # jumlah pesan terakhir (user + MinDee) yang dikirim ke LLM
+MAX_USER_TURNS_FOR_PREFS = 6   # jumlah pesan pelanggan terakhir untuk ekstraksi preferensi
+HISTORY_DIR = "chat_histories"
+PERSIST_HISTORY = True         # False = riwayat hanya di memori sesi (hilang saat halaman di-refresh)
+
 
 def get_groq_client():
     global _groq_client
@@ -175,15 +201,95 @@ def _pick_valid(value, allowed) -> str:
     return value if isinstance(value, str) and value in allowed else ""
 
 
+# ----------------------------------------------------------
+# Memori percakapan (conversation history)
+# ----------------------------------------------------------
+def build_user_context(messages: list, max_turns: int = MAX_USER_TURNS_FOR_PREFS) -> str:
+    """Gabungkan beberapa pesan pelanggan terakhir (urut dari lama ke baru)
+    supaya preferensi dari pesan sebelumnya tidak hilang."""
+    user_msgs = [m["content"] for m in messages if m.get("role") == "user"][-max_turns:]
+    return "\n".join(user_msgs)
+
+
+# ----------------------------------------------------------
+# Penyimpanan riwayat otomatis (satu file JSON per sesi, seperti bot Telegram)
+# ----------------------------------------------------------
+_SID_RE = re.compile(r"[a-f0-9]{32}")
+
+
+def get_session_id() -> str:
+    """ID sesi acak yang disimpan di URL (?sid=...), supaya riwayat tetap
+    diingat walau halaman di-refresh. Nilai dari URL divalidasi ketat
+    (32 karakter hex) karena dipakai sebagai nama file."""
+    sid = st.query_params.get("sid", "")
+    if not _SID_RE.fullmatch(sid or ""):
+        sid = uuid.uuid4().hex
+        st.query_params["sid"] = sid
+    return sid
+
+
+def _history_path(sid: str) -> str:
+    return os.path.join(HISTORY_DIR, f"riwayat_chat_{sid}.json")
+
+
+def _json_default(o):
+    # Jaga-jaga kalau ada tipe numpy di data produk
+    return o.item() if hasattr(o, "item") else str(o)
+
+
+def load_history(sid: str) -> list:
+    if not PERSIST_HISTORY:
+        return []
+    path = _history_path(sid)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, list):
+                return data
+        except (json.JSONDecodeError, OSError):
+            pass
+    return []
+
+
+def save_history(sid: str, messages: list):
+    if not PERSIST_HISTORY:
+        return
+    try:
+        os.makedirs(HISTORY_DIR, exist_ok=True)
+        with open(_history_path(sid), "w", encoding="utf-8") as f:
+            json.dump(messages, f, indent=2, ensure_ascii=False, default=_json_default)
+    except OSError:
+        logger.exception("Gagal menyimpan riwayat chat %s", sid)
+
+
+def clear_history(sid: str):
+    try:
+        os.remove(_history_path(sid))
+    except OSError:
+        pass
+
+
+def reset_chat():
+    """Mulai percakapan baru: kosongkan memori sesi sekaligus file riwayatnya."""
+    st.session_state.chat_messages = []
+    clear_history(st.session_state.chat_sid)
+
+
 def extract_preferences(user_message: str, opts: dict) -> dict:
     """Ekstrak preferensi bebas dari chat pelanggan menjadi field terstruktur
-    yang cocok dengan parameter pipeline.recommend()."""
+    yang cocok dengan parameter pipeline.recommend().
+
+    user_message boleh berisi beberapa pesan pelanggan berurutan
+    (lihat build_user_context)."""
     warna_wrapper_opts = opts.get("warna_wrapper", [])
     warna_isi_opts = opts.get("warna_isi", [])
 
     system_prompt = f"""Kamu adalah ekstraktor preferensi untuk sistem rekomendasi buket DnD Bouquett.
 Dari pesan pelanggan, ekstrak preferensi berikut. WAJIB kembalikan HANYA JSON valid,
 tanpa markdown code fence, tanpa penjelasan tambahan.
+
+Input berisi beberapa pesan pelanggan berurutan; gabungkan preferensinya, dan jika ada yang berubah, pakai yang terbaru.
 
 Field dan nilai yang DIPERBOLEHKAN (pilih persis salah satu, atau "" jika tidak disebutkan/tidak cocok):
 - bahan: salah satu dari {BAHAN_OPTIONS}
@@ -224,8 +330,11 @@ Format output (JSON murni, tanpa apa pun selain ini):
     }
 
 
-def stream_chat_reply(user_message: str, items: list):
-    """Generator yang menghasilkan potongan teks jawaban secara bertahap (efek mengetik)."""
+def stream_chat_reply(user_message: str, items: list, history=None):
+    """Generator yang menghasilkan potongan teks jawaban secara bertahap (efek mengetik).
+
+    history: daftar pesan sebelumnya (tanpa pesan pelanggan yang sedang diproses)
+    berbentuk [{"role": "user"/"assistant", "content": "..."}, ...]."""
     if not items:
         static_reply = (
             "Kak, boleh cerita sedikit lagi soal budget atau warna favoritnya? "
@@ -244,13 +353,19 @@ def stream_chat_reply(user_message: str, items: list):
         "Jangan gunakan HTML dan jangan tampilkan proses berpikir."
     )
 
+    messages = [{"role": "system", "content": system_prompt}]
+    for m in (history or [])[-MAX_HISTORY_MESSAGES:]:
+        if m.get("role") in ("user", "assistant") and m.get("content"):
+            messages.append({"role": m["role"], "content": m["content"]})
+    messages.append({
+        "role": "user",
+        "content": f"Pesan pelanggan: {user_message}\nJumlah pilihan yang ditemukan: {len(items)}",
+    })
+
     client = get_groq_client()
     stream = client.chat.completions.create(
         model=GROQ_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Pesan pelanggan: {user_message}\nJumlah pilihan yang ditemukan: {len(items)}"},
-        ],
+        messages=messages,
         temperature=0.5,
         reasoning_effort="none",
         stream=True,
@@ -365,21 +480,43 @@ def render_recommendation_cards(items: list):
 def render_chat_tab(opts: dict):
     st.markdown("<div class='sidebar-title' style='text-align:center;'>✦ Tanya MinDee</div>", unsafe_allow_html=True)
     st.markdown(
-        "<p style='text-align:center; color:#a16070; font-size:13px; margin-bottom:20px;'>"
-        "Buket seperti apa yang ingin kamu cari? let MinDee know yaa!</p>",
+        "<p style='text-align:center; color:#a16070; font-size:13px; margin-bottom:4px;'>"
+        "Buket seperti apa yang ingin kamu cari? let MinDee know yaa!</p>"
+        "<p style='text-align:center; color:#c9a0ac; font-size:11px; margin-bottom:20px;'>"
+        "Perintah: <b>/clear</b> atau <b>/reset</b> untuk mulai percakapan baru · "
+        "<b>/exit</b> untuk kembali ke pencarian manual</p>",
         unsafe_allow_html=True,
     )
 
+    # Riwayat dimuat otomatis (dari file jika ada), jadi konteks tidak hilang.
+    if "chat_sid" not in st.session_state:
+        st.session_state.chat_sid = get_session_id()
     if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = []
+        st.session_state.chat_messages = load_history(st.session_state.chat_sid)
 
     # chat_input WAJIB dipanggil di level teratas (di luar columns/container)
     # supaya otomatis menempel di bawah halaman seperti room chat.
     user_input = st.chat_input("Contoh: mau buket buat ibu, budget 100rb, suka warna pastel...")
 
+    # ---- Perintah khusus (diketik di kolom chat) ----
+    cmd = (user_input or "").strip().lower()
+    if cmd in ("/clear", "/reset"):
+        reset_chat()
+        st.rerun()
+    if cmd == "/exit":
+        st.session_state.view = "manual"
+        st.rerun()
+
     _, col_chat, _ = st.columns([1, 3, 1])
 
     with col_chat:
+        # ---- Tombol: mulai percakapan baru (riwayat diingat otomatis selama sesi) ----
+        b1, _ = st.columns([1, 2])
+        with b1:
+            if st.button("🗑️ Mulai Percakapan Baru", key="chat_clear"):
+                reset_chat()
+                st.rerun()
+
         for msg in st.session_state.chat_messages:
             if msg["role"] == "user":
                 render_user_bubble(msg["content"])
@@ -395,7 +532,11 @@ def render_chat_tab(opts: dict):
             items = []
             try:
                 with st.spinner("Mencari rekomendasi terbaik..."):
-                    prefs = extract_preferences(user_input, opts)
+                    # Preferensi diekstrak dari beberapa pesan pelanggan terakhir,
+                    # bukan hanya pesan terbaru, supaya konteks sesi tidak hilang.
+                    prefs = extract_preferences(
+                        build_user_context(st.session_state.chat_messages), opts
+                    )
                     res = pipeline.recommend(
                         bahan=prefs["bahan"],
                         harga=prefs["harga"],
@@ -405,10 +546,13 @@ def render_chat_tab(opts: dict):
                     )
                     items = res.get("data", [])
 
-                # Efek mengetik: teks polos (Markdown), bertahap, kursor "▌" di ujung
+                # Efek mengetik: teks polos (Markdown), bertahap, kursor "▌" di ujung.
+                # [:-1] karena pesan terakhir (pelanggan) dikirim terpisah di dalam fungsi.
                 placeholder = st.empty()
                 full_text = ""
-                for piece in stream_chat_reply(user_input, items):
+                for piece in stream_chat_reply(
+                    user_input, items, history=st.session_state.chat_messages[:-1]
+                ):
                     full_text += piece
                     placeholder.markdown(clean_llm_text(full_text) + " ▌")
 
@@ -423,6 +567,7 @@ def render_chat_tab(opts: dict):
                 render_assistant_text(reply)
 
             st.session_state.chat_messages.append({"role": "assistant", "content": reply, "items": items})
+            save_history(st.session_state.chat_sid, st.session_state.chat_messages)
             if items:
                 render_recommendation_cards(items)
 
@@ -437,8 +582,11 @@ if is_owner_route:
 
     password_input = st.text_input("Password Hak Akses:", type="password", placeholder="Masukkan kata sandi internal...")
 
-    OWNER_PASSWORD = os.getenv("OWNER_PASSWORD", "default_fallback")
-    if password_input == OWNER_PASSWORD:
+    # Tanpa fallback: kalau OWNER_PASSWORD belum diset, akses ditolak.
+    OWNER_PASSWORD = os.getenv("OWNER_PASSWORD")
+    if not OWNER_PASSWORD:
+        st.error("OWNER_PASSWORD belum diset di server. Akses dashboard ditutup.")
+    elif password_input == OWNER_PASSWORD:
         st.success("Akses diterima! Silakan perbarui katalog produk.")
 
         with st.form("form_tambah_barang", clear_on_submit=True):
