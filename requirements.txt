@@ -5,3 +5,4 @@ SQLAlchemy
 psycopg2-binary
 cloudinary
 groq
+python-dotenv
