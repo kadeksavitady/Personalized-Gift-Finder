@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import streamlit as st
 
 # Import library cloudinary
@@ -8,14 +8,20 @@ import cloudinary
 import cloudinary.uploader
 
 # Konfigurasi Database
+# Neon (serverless) menutup koneksi yang idle. Tanpa pool_pre_ping, koneksi mati
+# di pool akan memicu PendingRollbackError berulang sampai server di-restart.
 DB_URL = st.secrets["NEON_DB_URL"]
-engine = create_engine(DB_URL)
+engine = create_engine(
+    DB_URL,                # disarankan berakhiran ?sslmode=require
+    pool_pre_ping=True,    # cek koneksi masih hidup sebelum dipakai
+    pool_recycle=300,      # buang koneksi yang umurnya > 5 menit
+)
 
 # Konfigurasi Cloudinary
-cloudinary.config( 
-  cloud_name = st.secrets["CLOUDINARY_CLOUD_NAME"], 
-  api_key = st.secrets["CLOUDINARY_API_KEY"], 
-  api_secret = st.secrets["CLOUDINARY_API_SECRET"] 
+cloudinary.config(
+  cloud_name = st.secrets["CLOUDINARY_CLOUD_NAME"],
+  api_key = st.secrets["CLOUDINARY_API_KEY"],
+  api_secret = st.secrets["CLOUDINARY_API_SECRET"]
 )
 
 FEATURES = ['kategori_bahan', 'rentang_harga', 'warna_wrapper', 'warna_isi', 'gender_penerima']
@@ -33,18 +39,24 @@ HARGA_ORDINAL = {
     '<30k': 1, '35k - 45k': 2, '50k - 70k': 3, '80k - 100k': 4, '100k - 150k': 5
 }
 
+
+@st.cache_data(ttl=60, show_spinner=False)
 def get_data_from_db():
-    """Fungsi pembantu untuk menarik data terbaru dari Neon"""
-    return pd.read_sql('SELECT * FROM katalog_produk', engine)
+    """Menarik data katalog dari Neon (di-cache 60 detik; cache dibersihkan
+    otomatis setelah add_product berhasil)."""
+    with engine.connect() as conn:
+        return pd.read_sql(text("SELECT * FROM katalog_produk"), conn)
+
 
 def get_options():
-    """Mengambil pilihan unik secara live dari database untuk dropdown menu"""
+    """Mengambil pilihan unik dari database untuk dropdown menu"""
     df = get_data_from_db()
     return {col: sorted(df[col].dropna().unique().tolist()) for col in FEATURES}
 
+
 def recommend(bahan="", harga="", warna="", isi="", gender=""):
     """Menghitung rekomendasi berdasarkan Cosine Similarity dari data Neon"""
-    df = get_data_from_db()
+    df = get_data_from_db().copy()
 
     df['rentang_harga_num'] = df['rentang_harga'].map(HARGA_ORDINAL).fillna(0) / 5.0
     catalog_encoded = pd.get_dummies(df[FEATURES_NOMINAL])
@@ -84,18 +96,19 @@ def recommend(bahan="", harga="", warna="", isi="", gender=""):
 
     return {"status": "success", "data": top_results.to_dict(orient='records')}
 
+
 def add_product(kategori_bahan, rentang_harga, warna_wrapper, warna_isi, gender_penerima, file_gambar):
     """Mengunggah foto ke Cloudinary, lalu menyimpan datanya ke Neon"""
     bersih_wrapper = warna_wrapper.strip().title()
     bersih_isi = warna_isi.strip().title()
-    
+
     try:
         # 1. Upload file bytes langsung ke Cloudinary ke dalam folder 'dnd_buket'
         upload_result = cloudinary.uploader.upload(file_gambar, folder="dnd_buket")
-        
+
         # 2. Ambil URL publik yang dihasilkan Cloudinary
         url_gambar = upload_result['secure_url']
-        
+
         # 3. Siapkan data untuk masuk ke database Neon
         new_data = {
             'kategori_bahan': [kategori_bahan],
@@ -103,13 +116,19 @@ def add_product(kategori_bahan, rentang_harga, warna_wrapper, warna_isi, gender_
             'warna_wrapper': [bersih_wrapper],
             'warna_isi': [bersih_isi],
             'gender_penerima': [gender_penerima],
-            'nama_gambar': [url_gambar] # Simpan URL-nya di sini
+            'nama_gambar': [url_gambar]  # Simpan URL-nya di sini
         }
-        
+
         df_new = pd.DataFrame(new_data)
-        df_new.to_sql('katalog_produk', engine, if_exists='append', index=False)
-        
+
+        # engine.begin() = otomatis commit kalau sukses, rollback kalau gagal
+        with engine.begin() as conn:
+            df_new.to_sql('katalog_produk', conn, if_exists='append', index=False)
+
+        # Paksa katalog dimuat ulang supaya produk baru langsung muncul
+        get_data_from_db.clear()
+
         return {"status": "success", "message": "Produk berhasil diarsipkan dengan foto Cloudinary!"}
-        
+
     except Exception as e:
         return {"status": "error", "message": f"Gagal upload: {e}"}

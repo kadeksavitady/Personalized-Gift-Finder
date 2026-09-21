@@ -1,8 +1,15 @@
 import streamlit as st
 import os
-from utils.ui_helpers import score_bar, badge_kategori, badge_rank
+import re
+import json
+import html
+import logging
 import urllib.parse
+from groq import Groq
+from utils.ui_helpers import score_bar, badge_kategori, badge_rank
 import pipeline
+
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="DnD Bouquett – Gift Finder", page_icon="🌸", layout="wide")
 
@@ -33,7 +40,6 @@ html, body, [class*="css"], .stApp {
 hr { border: none !important; border-top: 1px solid #f5ccd8 !important; margin: 18px 0 !important; }
 .sidebar-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; color: #be185d; margin-bottom: 16px; }
 .field-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: #a16070; margin-bottom: 4px; display: block; }
-
 .stSelectbox > div > div { background: #fdf6f9 !important; border: 1px solid #f5ccd8 !important; border-radius: 10px !important; color: #2d1a24 !important; font-size: 13px !important; }
 .stSelectbox > div > div:focus-within { border-color: #be185d !important; box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.1) !important; }
 .stSelectbox svg { fill: #d4799a !important; }
@@ -69,8 +75,357 @@ hr { border: none !important; border-top: 1px solid #f5ccd8 !important; margin: 
 .score-text { font-size: 11px; color: #a16070; margin-top: 4px; }
 .product-price { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; color: #be185d; margin-top: 4px; }
 .admin-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: #a16070; border-left: 3px solid #be185d; padding-left: 8px; margin-bottom: 16px; border-radius: 0; }
+/* Tombol chatbot berlabel (pojok kanan atas) */
+[class*="st-key-chat_toggle"] { align-items: flex-end !important; }
+[class*="st-key-chat_toggle"] .stButton { display: flex !important; justify-content: flex-end !important; width: 100% !important; }
+[class*="st-key-chat_toggle"] [data-testid="stTooltipHoverTarget"] { width: auto !important; }
+[class*="st-key-chat_toggle"] .stButton button {
+    width: auto !important; min-width: 0 !important; height: 44px !important; min-height: 44px !important;
+    padding: 0 22px !important; border-radius: 30px !important;
+    font-size: 13px !important; font-weight: 500 !important; letter-spacing: 0.02em !important;
+    white-space: nowrap !important;
+}
+[class*="st-key-chat_toggle"] .stButton button p, [class*="st-key-chat_toggle"] .stButton button span { color: inherit !important; margin: 0 !important; font-size: 13px !important; white-space: nowrap !important; }
+/* Tertutup: pink solid biar jelas itu tombol chatbot */
+.st-key-chat_toggle_closed .stButton button {
+    background: #be185d !important; background-color: #be185d !important; color: #ffffff !important; border: none !important;
+    box-shadow: 0 6px 18px rgba(190, 24, 93, 0.28) !important;
+}
+.st-key-chat_toggle_closed .stButton button:hover { background: #9d174d !important; transform: translateY(-1px) !important; }
+/* Terbuka: putih outline (tombol tutup) */
+.st-key-chat_toggle_open .stButton button {
+    background: #ffffff !important; background-color: #ffffff !important; color: #be185d !important; border: 1px solid #f5ccd8 !important;
+    box-shadow: none !important;
+}
+.st-key-chat_toggle_open .stButton button:hover { background: #fef3f7 !important; border-color: #f9a8d4 !important; transform: none !important; }
+/* Kolom ketik chat: menempel di bawah halaman (gaya room chat) */
+[data-testid="stBottom"] > div, [data-testid="stBottomBlockContainer"] { background: #fdf6f9 !important; }
+[data-testid="stChatInput"] {
+    max-width: 720px !important; margin-left: auto !important; margin-right: auto !important;
+    background: #ffffff !important; border: 1px solid #f5ccd8 !important; border-radius: 26px !important;
+    box-shadow: 0 6px 20px rgba(190, 24, 93, 0.06) !important;
+}
+[data-testid="stChatInput"]:focus-within { border-color: #be185d !important; box-shadow: 0 0 0 3px rgba(190, 24, 93, 0.1) !important; }
+[data-testid="stChatInput"] > div, [data-testid="stChatInput"] [data-baseweb="textarea"], [data-testid="stChatInput"] [data-baseweb="base-input"] { background: transparent !important; border: none !important; }
+[data-testid="stChatInput"] textarea { color: #2d1a24 !important; font-size: 14px !important; }
+[data-testid="stChatInput"] textarea::placeholder { color: #c9a0ac !important; }
+[data-testid="stChatInputSubmitButton"] { background: #be185d !important; color: #ffffff !important; border-radius: 50% !important; }
+[data-testid="stChatInputSubmitButton"]:disabled { background: #f5ccd8 !important; color: #ffffff !important; }
+/* Chat: pesan customer = pill netral, jawaban chatbot = teks polos (tanpa bubble) */
+.chat-row-user { display: flex; justify-content: flex-end; margin: 14px 0 8px; }
+.chat-bubble-user {
+    max-width: 72%;
+    background: #f1efef;
+    color: #2d1a24;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+/* Formatting markdown jawaban chatbot (bold, list) supaya rapi & lega */
+[data-testid="stMarkdownContainer"] p { line-height: 1.7; }
+[data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol { padding-left: 1.3rem; margin: 6px 0 12px; }
+[data-testid="stMarkdownContainer"] li { margin-bottom: 6px; line-height: 1.65; }
+[data-testid="stMarkdownContainer"] strong { color: #2d1a24; font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
+
+# ==========================================================
+# GROQ CLIENT (untuk fitur Tanya MinDee)
+# ==========================================================
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
+_groq_client = None
+
+
+def get_groq_client():
+    global _groq_client
+    if _groq_client is None:
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError("GROQ_API_KEY belum diset di environment/.env")
+        _groq_client = Groq(api_key=api_key)
+    return _groq_client
+
+
+# Kategori valid yang cocok persis dengan backend/main.py
+HARGA_OPTIONS = ["<30k", "35k - 45k", "50k - 70k", "80k - 100k", "100k - 150k"]
+BAHAN_OPTIONS = ["artificial", "pipecleaner", "snack"]
+GENDER_OPTIONS = ["Perempuan", "Laki-laki", "Netral"]
+
+# ----------------------------------------------------------
+# Sanitasi output LLM: buang blok <think>...</think> (termasuk yang
+# belum tertutup / baru setengah tag saat streaming) supaya proses
+# "berpikir" model tidak bocor ke tampilan.
+# ----------------------------------------------------------
+_THINK_CLOSED_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+_THINK_OPEN_RE = re.compile(r"<think>.*$", re.DOTALL | re.IGNORECASE)
+_PARTIAL_TAG_RE = re.compile(r"</?(?:think|thin|thi|th|t)?$", re.IGNORECASE)
+
+
+def clean_llm_text(text: str) -> str:
+    text = _THINK_CLOSED_RE.sub("", text)
+    text = _THINK_OPEN_RE.sub("", text)
+    text = _PARTIAL_TAG_RE.sub("", text)
+    return text.lstrip()
+
+
+def _pick_valid(value, allowed) -> str:
+    """Pastikan nilai hasil LLM benar-benar salah satu opsi yang valid."""
+    return value if isinstance(value, str) and value in allowed else ""
+
+
+def extract_preferences(user_message: str, opts: dict) -> dict:
+    """Ekstrak preferensi bebas dari chat pelanggan menjadi field terstruktur
+    yang cocok dengan parameter pipeline.recommend()."""
+    warna_wrapper_opts = opts.get("warna_wrapper", [])
+    warna_isi_opts = opts.get("warna_isi", [])
+
+    system_prompt = f"""Kamu adalah ekstraktor preferensi untuk sistem rekomendasi buket DnD Bouquett.
+Dari pesan pelanggan, ekstrak preferensi berikut. WAJIB kembalikan HANYA JSON valid,
+tanpa markdown code fence, tanpa penjelasan tambahan.
+
+Field dan nilai yang DIPERBOLEHKAN (pilih persis salah satu, atau "" jika tidak disebutkan/tidak cocok):
+- bahan: salah satu dari {BAHAN_OPTIONS}
+- harga: salah satu dari {HARGA_OPTIONS} (kalau pelanggan sebut nominal rupiah, pilih rentang paling mendekati)
+- warna: salah satu dari {warna_wrapper_opts}
+- isi: salah satu dari {warna_isi_opts}
+- gender: salah satu dari {GENDER_OPTIONS}
+
+Format output (JSON murni, tanpa apa pun selain ini):
+{{"bahan": "", "harga": "", "warna": "", "isi": "", "gender": ""}}
+"""
+    client = get_groq_client()
+    response = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ],
+        temperature=0,
+        reasoning_effort="none",
+    )
+    raw = clean_llm_text(response.choices[0].message.content or "")
+    raw = raw.replace("```json", "").replace("```", "").strip()
+
+    # Ambil objek JSON pertama saja, kalau model menambah teks di sekitarnya
+    match = re.search(r"\{.*\}", raw, re.DOTALL)
+    try:
+        parsed = json.loads(match.group(0)) if match else {}
+    except json.JSONDecodeError:
+        parsed = {}
+
+    return {
+        "bahan": _pick_valid(parsed.get("bahan"), BAHAN_OPTIONS),
+        "harga": _pick_valid(parsed.get("harga"), HARGA_OPTIONS),
+        "warna": _pick_valid(parsed.get("warna"), warna_wrapper_opts),
+        "isi": _pick_valid(parsed.get("isi"), warna_isi_opts),
+        "gender": _pick_valid(parsed.get("gender"), GENDER_OPTIONS),
+    }
+
+
+def stream_chat_reply(user_message: str, items: list):
+    """Generator yang menghasilkan potongan teks jawaban secara bertahap (efek mengetik)."""
+    if not items:
+        static_reply = (
+            "Kak, boleh cerita sedikit lagi soal budget atau warna favoritnya? "
+            "Biar MinDee carikan buket yang paling pas ya 🌸"
+        )
+        for word in static_reply.split(" "):
+            yield word + " "
+        return
+
+    system_prompt = (
+        "Namamu MinDee, asisten customer service virtual yang ramah untuk dnd.bouquet (Dear n Deep). "
+        "Sebut dirimu 'MinDee' (bukan 'aku' atau 'saya'), dan panggil pelanggan 'Kak'. "
+        "Tulis HANYA kalimat pembuka singkat (1-2 kalimat) yang menanggapi permintaan pelanggan dan "
+        "mengantar ke daftar rekomendasi. JANGAN sebut jenis bahan, warna, atau harga, dan JANGAN buat list: "
+        "daftar pilihan akan ditambahkan otomatis oleh sistem. "
+        "Jangan gunakan HTML dan jangan tampilkan proses berpikir."
+    )
+
+    client = get_groq_client()
+    stream = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Pesan pelanggan: {user_message}\nJumlah pilihan yang ditemukan: {len(items)}"},
+        ],
+        temperature=0.5,
+        reasoning_effort="none",
+        stream=True,
+    )
+    for chunk in stream:
+        if not chunk.choices:
+            continue
+        delta = chunk.choices[0].delta.content
+        if delta:
+            yield delta
+
+    # Detail produk (bahan, warna, harga) dibuat oleh kode, BUKAN oleh LLM,
+    # supaya ejaan & angkanya selalu persis sama dengan data di database.
+    yield "\n\n" + build_options_markdown(items)
+    yield "\n\nKalau ada yang cocok, klik tombol **Pesan via WhatsApp** di bawah kartu produk ya, Kak 🌸"
+
+
+def build_options_markdown(items: list) -> str:
+    lines = []
+    for it in items:
+        bahan = str(it.get("kategori_bahan", "")).strip().capitalize()
+        lines.append(
+            f"- **{bahan}** dengan kombinasi warna **{it.get('warna_wrapper')} x {it.get('warna_isi')}**, "
+            f"harga **Rp {it.get('rentang_harga')}**"
+        )
+    return "\n".join(lines)
+
+
+def render_user_bubble(text: str):
+    """Pesan customer: pill rounded warna netral. Teks di-escape supaya
+    karakter seperti < > & tidak merusak HTML."""
+    safe = html.escape(text).replace("\n", "<br>")
+    st.markdown(
+        f"<div class='chat-row-user'><div class='chat-bubble-user'>{safe}</div></div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_assistant_text(text: str):
+    """Jawaban chatbot: teks polos tanpa bubble, dirender sebagai Markdown
+    (bold, list, dll). Tanpa unsafe_allow_html, jadi tag HTML tidak akan
+    tampil/bocor sebagai kode."""
+    st.markdown(text)
+
+
+def render_recommendation_cards(items: list):
+    """Kartu hasil rekomendasi — dipakai bersama oleh tab manual & tab chatbot."""
+    if not items:
+        return
+
+    cols_card = st.columns(min(len(items), 3), gap="medium")
+    for i, item in enumerate(items):
+        bahan = item['kategori_bahan'].lower()
+
+        if bahan == "artificial":
+            badge_kat_html = f"<span class='badge-kategori'>{item['kategori_bahan'].upper()}</span>"
+        elif bahan == "snack":
+            badge_kat_html = f"<span class='badge-kategori-green'>{item['kategori_bahan'].upper()}</span>"
+        else:
+            badge_kat_html = f"<span class='badge-kategori-teal'>{item['kategori_bahan'].upper()}</span>"
+
+        with cols_card[i % len(cols_card)]:
+            with st.container(border=True):
+                data_foto = str(item.get('nama_gambar') or "")
+
+                if data_foto.startswith("http"):
+                    st.image(data_foto, width='stretch')
+                else:
+                    bg = {"artificial": "#fef3f7", "snack": "#eaf3de"}.get(bahan, "#e1f5ee")
+                    st.markdown(
+                        f"<div style='height:140px; background:{bg}; border-radius:12px; "
+                        f"display:flex; align-items:center; justify-content:center; "
+                        f"font-size:40px;'>🌸</div>",
+                        unsafe_allow_html=True
+                    )
+
+                st.markdown(
+                    f"<p style='font-family:Playfair Display,serif; font-size:15px; "
+                    f"font-weight:600; color:#2d1a24; margin:8px 0 2px; line-height:1.3;'>"
+                    f"{item['warna_wrapper']} × {item['warna_isi']}</p>",
+                    unsafe_allow_html=True
+                )
+                st.markdown(
+                    f"<div class='product-price'>Rp {item['rentang_harga']}</div>",
+                    unsafe_allow_html=True
+                )
+                match_pct = item['similarity_score'] * 100
+                st.markdown(score_bar(match_pct), unsafe_allow_html=True)
+                st.markdown(
+                    f"<p style='font-size:11px; color:#a16070; margin:6px 0 12px; line-height:1.6;'>"
+                    f"💝 {item['gender_penerima']}</p>",
+                    unsafe_allow_html=True
+                )
+                teks_pesan = (
+                    f"Halo Admin Dnd Buket! 🌸\n\n"
+                    f"Saya menggunakan Gift Finder dan ingin memesan buket ini:\n"
+                    f"- Jenis: {item['kategori_bahan'].upper()}\n"
+                    f"- Warna: {item['warna_wrapper']} x {item['warna_isi']}\n"
+                    f"- Budget: Rp {item['rentang_harga']}\n\n"
+                    f"Apakah ready?"
+                )
+                pesan_encoded = urllib.parse.quote(teks_pesan)
+                nomor_wa = "6281244170440"
+                link_wa = f"https://wa.me/{nomor_wa}?text={pesan_encoded}"
+                st.link_button(
+                    "💌 Pesan via WhatsApp",
+                    url=link_wa,
+                    use_container_width=True
+                )
+
+
+def render_chat_tab(opts: dict):
+    st.markdown("<div class='sidebar-title' style='text-align:center;'>✦ Tanya MinDee</div>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='text-align:center; color:#a16070; font-size:13px; margin-bottom:20px;'>"
+        "Buket seperti apa yang ingin kamu cari? let MinDee know yaa!</p>",
+        unsafe_allow_html=True,
+    )
+
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+
+    # chat_input WAJIB dipanggil di level teratas (di luar columns/container)
+    # supaya otomatis menempel di bawah halaman seperti room chat.
+    user_input = st.chat_input("Contoh: mau buket buat ibu, budget 100rb, suka warna pastel...")
+
+    _, col_chat, _ = st.columns([1, 3, 1])
+
+    with col_chat:
+        for msg in st.session_state.chat_messages:
+            if msg["role"] == "user":
+                render_user_bubble(msg["content"])
+            else:
+                render_assistant_text(msg["content"])
+                if msg.get("items"):
+                    render_recommendation_cards(msg["items"])
+
+        if user_input:
+            st.session_state.chat_messages.append({"role": "user", "content": user_input})
+            render_user_bubble(user_input)
+
+            items = []
+            try:
+                with st.spinner("Mencari rekomendasi terbaik..."):
+                    prefs = extract_preferences(user_input, opts)
+                    res = pipeline.recommend(
+                        bahan=prefs["bahan"],
+                        harga=prefs["harga"],
+                        warna=prefs["warna"],
+                        isi=prefs["isi"],
+                        gender=prefs["gender"],
+                    )
+                    items = res.get("data", [])
+
+                # Efek mengetik: teks polos (Markdown), bertahap, kursor "▌" di ujung
+                placeholder = st.empty()
+                full_text = ""
+                for piece in stream_chat_reply(user_input, items):
+                    full_text += piece
+                    placeholder.markdown(clean_llm_text(full_text) + " ▌")
+
+                reply = clean_llm_text(full_text)
+                placeholder.markdown(reply)  # render final tanpa kursor
+
+            except Exception:
+                # Detail error hanya di log server, tidak ditampilkan ke pelanggan
+                logger.exception("Gagal memproses chat pelanggan")
+                items = []
+                reply = "Maaf Kak, MinDee lagi sibuk nih. Coba lagi sebentar ya! 🙏"
+                render_assistant_text(reply)
+
+            st.session_state.chat_messages.append({"role": "assistant", "content": reply, "items": items})
+            if items:
+                render_recommendation_cards(items)
+
 
 query_params = st.query_params
 is_owner_route = query_params.get("view") == "owner"
@@ -88,13 +443,12 @@ if is_owner_route:
 
         with st.form("form_tambah_barang", clear_on_submit=True):
             st.markdown("<div class='admin-label'>Data Produk Baru</div>", unsafe_allow_html=True)
-            
-            # Ambil opsi warna dari backend
+
             try:
                 opts = pipeline.get_options()
                 opsi_wrapper = opts.get('warna_wrapper', [])
                 opsi_isi = opts.get('warna_isi', [])
-            except:
+            except Exception:
                 opsi_wrapper = []
                 opsi_isi = []
 
@@ -143,155 +497,101 @@ if is_owner_route:
                     for e in errors:
                         st.error(e)
                 else:
-                    # Ambil wujud asli file gambar yang diupload
                     file_bytes = in_file.getvalue()
-                    
-                    # Lempar datanya langsung ke pipeline (tanpa payload_post)
+
                     result = pipeline.add_product(
-                        kategori_bahan=in_bahan, 
-                        rentang_harga=in_harga, 
-                        warna_wrapper=in_wrapper, 
-                        warna_isi=in_isi, 
-                        gender_penerima=in_gender, 
+                        kategori_bahan=in_bahan,
+                        rentang_harga=in_harga,
+                        warna_wrapper=in_wrapper,
+                        warna_isi=in_isi,
+                        gender_penerima=in_gender,
                         file_gambar=file_bytes
                     )
-                    
+
                     if result["status"] == "success":
                         st.success(result["message"])
                         st.balloons()
                     else:
                         st.error(result["message"])
-            else:
-                    st.error("Lengkapi semua field teks dan upload foto produk!")
     elif password_input:
         st.error("Kata sandi salah. Akses ditolak.")
 
 else:
-    st.markdown("<div class='title-brand'>🌸 DnD <span>Bouquett</span></div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitle-brand'>Temukan buket handmade yang berbicara dari hatimu — dipersonalisasi untukmu.</div>", unsafe_allow_html=True)
+    st.session_state.setdefault("view", "manual")
+
+    def toggle_chat_view():
+        st.session_state.view = "manual" if st.session_state.view == "chat" else "chat"
+
+    in_chat = st.session_state.view == "chat"
+
+    head_left, head_right = st.columns([3, 1], vertical_alignment="top")
+    with head_left:
+        st.markdown("<div class='title-brand'>🌸 DnD <span>Bouquett</span></div>", unsafe_allow_html=True)
+        st.markdown("<div class='subtitle-brand'>Temukan buket handmade yang berbicara dari hatimu — dipersonalisasi untukmu.</div>", unsafe_allow_html=True)
+    with head_right:
+        with st.container(key="chat_toggle_open" if in_chat else "chat_toggle_closed"):
+            st.button(
+                "✕  Tutup MinDee" if in_chat else "🤖  Tanya MinDee",
+                key="chat_toggle_btn",
+                on_click=toggle_chat_view,
+                help="Kembali ke pencarian" if in_chat else "Ceritakan kado yang kamu cari, MinDee bantu carikan",
+            )
     st.write("---")
 
     try:
         opts = pipeline.get_options()
-        col_sidebar, col_content = st.columns([1, 2.8], gap="large")
 
-        with col_sidebar:
-            with st.container(border=True):
-                st.markdown("<div class='sidebar-title'>✦ Atur Kriteria Kado</div>", unsafe_allow_html=True)
+        if not in_chat:
+            col_sidebar, col_content = st.columns([1, 2.8], gap="large")
 
-                st.markdown("<span class='field-label'>Kategori Bahan</span>", unsafe_allow_html=True)
-                f_bahan = st.selectbox("Kategori Bahan", [""] + opts['kategori_bahan'], label_visibility="collapsed")
+            with col_sidebar:
+                with st.container(border=True):
+                    st.markdown("<div class='sidebar-title'>✦ Atur Kriteria Kado</div>", unsafe_allow_html=True)
 
-                st.markdown("<span class='field-label'>Rentang Harga</span>", unsafe_allow_html=True)
-                f_harga = st.selectbox("Rentang Harga", [""] + opts['rentang_harga'], label_visibility="collapsed")
+                    st.markdown("<span class='field-label'>Kategori Bahan</span>", unsafe_allow_html=True)
+                    f_bahan = st.selectbox("Kategori Bahan", [""] + opts['kategori_bahan'], label_visibility="collapsed")
 
-                st.markdown("<span class='field-label'>Warna Wrapper</span>", unsafe_allow_html=True)
-                f_wrapper = st.selectbox("Warna Wrapper", [""] + opts['warna_wrapper'], label_visibility="collapsed")
+                    st.markdown("<span class='field-label'>Rentang Harga</span>", unsafe_allow_html=True)
+                    f_harga = st.selectbox("Rentang Harga", [""] + opts['rentang_harga'], label_visibility="collapsed")
 
-                st.markdown("<span class='field-label'>Warna Isi</span>", unsafe_allow_html=True)
-                f_isi = st.selectbox("Warna Isi", [""] + opts['warna_isi'], label_visibility="collapsed")
+                    st.markdown("<span class='field-label'>Warna Wrapper</span>", unsafe_allow_html=True)
+                    f_wrapper = st.selectbox("Warna Wrapper", [""] + opts['warna_wrapper'], label_visibility="collapsed")
 
-                st.markdown("<span class='field-label'>Untuk Siapa?</span>", unsafe_allow_html=True)
-                f_gender = st.selectbox("Untuk Siapa", [""] + opts['gender_penerima'], label_visibility="collapsed")
+                    st.markdown("<span class='field-label'>Warna Isi</span>", unsafe_allow_html=True)
+                    f_isi = st.selectbox("Warna Isi", [""] + opts['warna_isi'], label_visibility="collapsed")
 
-                st.write("")
-                btn_cari = st.button("Temukan Buket Impian!", use_container_width=True)
+                    st.markdown("<span class='field-label'>Untuk Siapa?</span>", unsafe_allow_html=True)
+                    f_gender = st.selectbox("Untuk Siapa", [""] + opts['gender_penerima'], label_visibility="collapsed")
 
-        with col_content:
-            if btn_cari:
-                payload = {
-                    "bahan": f_bahan, "harga": f_harga, "warna": f_wrapper,
-                    "isi": f_isi, "gender": f_gender
-                }
-                res = pipeline.recommend(bahan=f_bahan, harga=f_harga, warna=f_wrapper, isi=f_isi, gender=f_gender)
+                    st.write("")
+                    btn_cari = st.button("Temukan Buket Impian!", use_container_width=True)
 
-                st.markdown(
-                    "<p style='font-family:Playfair Display,serif; font-size:22px; "
-                    "font-weight:600; color:#2d1a24; margin-bottom:16px;'>"
-                    "✦ 3 Rekomendasi Terbaik Untukmu</p>",
-                    unsafe_allow_html=True
-                )
+            with col_content:
+                if btn_cari:
+                    res = pipeline.recommend(bahan=f_bahan, harga=f_harga, warna=f_wrapper, isi=f_isi, gender=f_gender)
 
-                cols_card = st.columns(3, gap="medium")
-                for i, item in enumerate(res['data']):
-                    rank = i + 1
-                    bahan = item['kategori_bahan'].lower()
+                    st.markdown(
+                        "<p style='font-family:Playfair Display,serif; font-size:22px; "
+                        "font-weight:600; color:#2d1a24; margin-bottom:16px;'>"
+                        "✦ 3 Rekomendasi Terbaik Untukmu</p>",
+                        unsafe_allow_html=True
+                    )
+                    render_recommendation_cards(res.get('data', []))
+                else:
+                    st.markdown(
+                        "<div style='margin-top:70px; text-align:center;'>"
+                        "<div style='font-size:52px; margin-bottom:14px;'>🌸</div>"
+                        "<p style='font-family:Playfair Display,serif; font-size:22px; "
+                        "font-weight:600; color:#d4799a;'>Pilih kriteria kado di sebelah kiri,</p>"
+                        "<p style='font-size:13px; color:#a16070; margin-top:6px;'>"
+                        "lalu klik <b style='color:#be185d;'>Temukan Buket Impian</b> untuk melihat rekomendasi.</p>"
+                        "</div>",
+                        unsafe_allow_html=True
+                    )
 
-                    if bahan == "artificial":
-                        badge_kat_html = f"<span class='badge-kategori'>{item['kategori_bahan'].upper()}</span>"
-                    elif bahan == "snack":
-                        badge_kat_html = f"<span class='badge-kategori-green'>{item['kategori_bahan'].upper()}</span>"
-                    else:
-                        badge_kat_html = f"<span class='badge-kategori-teal'>{item['kategori_bahan'].upper()}</span>"
+        else:
+            render_chat_tab(opts)
 
-                    with cols_card[i]:
-                        with st.container(border=True):
-                            data_foto = str(item.get('nama_gambar') or "")
-
-                            if data_foto.startswith("http"):
-                                st.image(data_foto, width='stretch')
-                            else:
-                                bg = {"artificial": "#fef3f7", "snack": "#eaf3de"}.get(bahan, "#e1f5ee")
-                                st.markdown(
-                                    f"<div style='height:140px; background:{bg}; border-radius:12px; "
-                                    f"display:flex; align-items:center; justify-content:center; "
-                                    f"font-size:40px;'>🌸</div>",
-                                    unsafe_allow_html=True
-                                )
-                        
-                            # # Tampilkan gambar langsung dari URL Cloudinary
-                            # url_foto = item['nama_gambar']
-                            
-                            # if url_foto.startswith("http"):
-                            #     st.image(url_foto, use_container_width=True)
-                            # else:
-                            #     # Jika ada data lama yang belum pakai URL
-                            #     st.info("Tidak ada foto")   
-                            
-                            st.markdown(
-                                f"<p style='font-family:Playfair Display,serif; font-size:15px; "
-                                f"font-weight:600; color:#2d1a24; margin:8px 0 2px; line-height:1.3;'>"
-                                f"{item['warna_wrapper']} × {item['warna_isi']}</p>",
-                                unsafe_allow_html=True
-                            )
-                            st.markdown(
-                                f"<div class='product-price'>Rp {item['rentang_harga']}</div>",
-                                unsafe_allow_html=True
-                            )
-                            match_pct = item['similarity_score'] * 100
-                            st.markdown(score_bar(match_pct), unsafe_allow_html=True)
-                            st.markdown(
-                                f"<p style='font-size:11px; color:#a16070; margin:6px 0 12px; line-height:1.6;'>"
-                                f"💝 {item['gender_penerima']}</p>",
-                                unsafe_allow_html=True
-                            )
-                            teks_pesan = (
-                                f"Halo Admin Dnd Buket! 🌸\n\n"
-                                f"Saya menggunakan Gift Finder dan ingin memesan buket ini:\n"
-                                f"- Jenis: {item['kategori_bahan'].upper()}\n"
-                                f"- Warna: {item['warna_wrapper']} x {item['warna_isi']}\n"
-                                f"- Budget: Rp {item['rentang_harga']}\n\n"
-                                f"Apakah ready?"
-                            )
-                            pesan_encoded = urllib.parse.quote(teks_pesan)
-                            nomor_wa = "6281244170440"
-                            link_wa = f"https://wa.me/{nomor_wa}?text={pesan_encoded}"
-                            st.link_button(
-                                "💌 Pesan via WhatsApp",
-                                url=link_wa,
-                                use_container_width=True
-                            )
-            else:
-                st.markdown(
-                    "<div style='margin-top:70px; text-align:center;'>"
-                    "<div style='font-size:52px; margin-bottom:14px;'>🌸</div>"
-                    "<p style='font-family:Playfair Display,serif; font-size:22px; "
-                    "font-weight:600; color:#d4799a;'>Pilih kriteria kado di sebelah kiri,</p>"
-                    "<p style='font-size:13px; color:#a16070; margin-top:6px;'>"
-                    "lalu klik <b style='color:#be185d;'>Temukan Buket Impian</b> untuk melihat rekomendasi.</p>"
-                    "</div>",
-                    unsafe_allow_html=True
-                )
-
-    except Exception as e:
-        st.error(f"❌ Terjadi kesalahan sistem atau gagal terhubung ke Database Neon: {e}")
+    except Exception:
+        logger.exception("Gagal memuat aplikasi / terhubung ke database")
+        st.error("❌ Terjadi kesalahan sistem. Coba muat ulang halaman beberapa saat lagi.")
