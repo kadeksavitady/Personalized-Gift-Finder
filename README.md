@@ -1,6 +1,6 @@
 # 🌸 DnD Bouquet — Personalized Gift Finder
 
-> Sistem Rekomendasi Berbasis **Weighted Content-Based Filtering** untuk UMKM *dnd bouquet*, dengan tambahan fitur chatbot untuk memasukkan preferensi melalui percakapan bebas.
+> Sistem Rekomendasi Berbasis **Weighted Content-Based Filtering** untuk UMKM *dnd bouquet*, dengan tambahan fitur chatbot (MinDee) untuk memasukkan preferensi melalui percakapan bebas.
 > Mata Kuliah Sistem Rekomendasi (SISTEM REKOMENDASI) dan Model Bahasa Besar & Agen Kecerdasan Buatan (CHATBOT)
 > **Kadek Savita Dyutianaya** — NRP 3324600033
 
@@ -11,7 +11,7 @@
 Aplikasi web untuk menemukan buket *handmade* sesuai preferensi pengguna. Preferensi dapat dimasukkan melalui dua cara:
 
 1. **Cari Manual** — memilih kriteria lewat dropdown (bahan, harga, warna, gender penerima).
-2. **Tanya Chatbot** — menuliskan permintaan dalam bentuk kalimat bebas, misalnya *"mau kado buat ibu, budget 100rb, suka pastel"*.
+2. **Tanya Chatbot (MinDee)** — menuliskan permintaan dalam bentuk kalimat bebas, misalnya *"mau kado buat ibu, budget 100rb, suka pastel"*.
 
 Kedua cara ini menggunakan mesin rekomendasi yang sama (**Weighted Content-Based Filtering** dengan **Cosine Similarity**); perbedaannya hanya pada bagaimana preferensi tersebut dimasukkan ke sistem.
 
@@ -19,11 +19,10 @@ Arsitektur aplikasi menggunakan pendekatan **Cloud-Native**:
 
 | Layer | Teknologi |
 |-------|-----------|
-| Frontend | Streamlit |
-| Backend | FastAPI |
+| Frontend & App | Streamlit (Berjalan di Web) |
 | Database | Neon (PostgreSQL Serverless) |
 | Image Storage | Cloudinary (CDN-based) |
-| Chatbot | Groq API (model `qwen/qwen3.8-27b`, dapat dikonfigurasi) |
+| Chatbot AI | Groq API (model `qwen/qwen3.8-27b`, dapat dikonfigurasi) |
 
 ---
 
@@ -68,7 +67,9 @@ Sistem menghitung kecocokan produk berdasarkan prioritas berikut:
 
 ## Fitur Chatbot
 
-Tab **"Tanya Chatbot"** pada `frontend/app.py` menyediakan cara lain untuk memasukkan preferensi buket, yaitu melalui kalimat bebas. Chatbot ini berjalan sebagai bagian dari aplikasi Streamlit yang sama, tanpa proses atau server tambahan.
+Tab **"Tanya Chatbot"** pada aplikasi web ini menghadirkan asisten virtual bernama MinDee (Admin dnd.bouquett). MinDee dirancang untuk membantu pelanggan menemukan buket ideal mereka melalui percakapan alami.
+
+Penting: Chatbot MinDee berjalan sepenuhnya di lingkungan web (Streamlit) dan dipanggil secara langsung melalui pipeline, tanpa memerlukan server backend terpisah, sehingga performanya lebih cepat dan efisien.
 
 ### Cara Kerja
 
@@ -77,11 +78,11 @@ Tab **"Tanya Chatbot"** pada `frontend/app.py` menyediakan cara lain untuk memas
 3. Field tersebut dikirim ke `pipeline.recommend()` — **fungsi yang sama** yang dipakai tab "Cari Manual", memastikan hasil rekomendasi konsisten di kedua jalur.
 4. Jawaban natural disusun ulang oleh Groq dan ditampilkan secara **streaming** (kata demi kata), diikuti kartu produk hasil rekomendasi (foto, skor kecocokan, tombol pesan via WhatsApp) — identik dengan tampilan di tab manual.
 
-### Tampilan Percakapan
-
-- Pesan pengguna ditampilkan sebagai bubble rata kanan.
-- Balasan chatbot ditampilkan sebagai teks rata kiri tanpa bubble.
-- Riwayat percakapan disimpan di `st.session_state`, berlaku untuk sesi browser yang sedang berjalan dan tidak disimpan ke database.
+### ⚠️ Catatan Penggunaan AI
+Chatbot MinDee ditenagai oleh Large Language Model (LLM). Harap diperhatikan:
+- Halusinasi AI: Meski telah diinstruksikan dengan ketat untuk merujuk pada katalog DnD Bouquet, AI terkadang dapat menghasilkan informasi yang kurang akurat.
+- Ketergantungan Ekstraksi: Jika kalimat pengguna terlalu ambigu dan AI gagal mengekstrak preferensi, sistem secara otomatis akan menggunakan fallback (menampilkan 3 produk teratas) yang mungkin kurang relevan.
+- Selalu periksa kembali kartu produk rekomendasi akhir untuk memastikan ketersediaan dan detail sebenarnya.
 
 ### Dependensi Tambahan
 
@@ -139,10 +140,10 @@ dnd-bouquett/
 
 ### Prasyarat
 
-- Python **3.9+** & pip
-- Akun [Neon](https://neon.tech) (PostgreSQL Serverless)
-- Akun [Cloudinary](https://cloudinary.com) (Image Storage)
-- Akun [Groq](https://console.groq.com) (untuk fitur chatbot)
+- Python 3.9+ & pip
+- Akun Neon (PostgreSQL Serverless)
+- Akun Cloudinary (Image Storage)
+- Akun Groq (untuk fitur chatbot)
 
 ### 1. Clone Repository
 
@@ -206,19 +207,9 @@ streamlit run frontend/app.py
 | Layanan | URL |
 |---------|-----|
 | Aplikasi utama (Streamlit) | http://localhost:8501 |
-| Tab Chatbot | http://localhost:8501 → pilih "💬 Tanya Chatbot" |
+| Tab Chatbot | http://localhost:8501 → pilih "💬 Tanya MinDee" |
 | API Dokumentasi (FastAPI) | http://localhost:8000/docs |
 | Owner Dashboard | http://localhost:8501/?view=owner |
-
----
-
-## Demo Live
-
-Aplikasi sudah di-deploy dan dapat diakses langsung tanpa instalasi:
-
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://personalized-gift-finder.streamlit.app/)
-
-> Catatan: fitur chatbot pada demo live membutuhkan `GROQ_API_KEY` yang valid untuk dikonfigurasi di Streamlit Cloud secrets.
 
 ---
 
